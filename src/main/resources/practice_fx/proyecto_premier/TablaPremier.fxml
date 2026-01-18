@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Accordion?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.effect.ColorAdjust?>
+<?import javafx.scene.effect.Light.Distant?>
+<?import javafx.scene.effect.Lighting?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.text.Font?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" style="-fx-background-color: beige;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.Controller_TablaGeneral">
+   <children>
+      <ImageView fitHeight="606.0" fitWidth="906.0" layoutX="-4.0" layoutY="-4.0" pickOnBounds="true" preserveRatio="false">
+         <image>
+            <Image url="@premier.jpg" />
+         </image>
+      </ImageView>
+      <TableView fx:id="tblLista" editable="true" layoutX="6.0" layoutY="135.0" prefHeight="451.0" prefWidth="889.0" style="-fx-background-color: rgba(255, 255, 255, 0.5); -fx-background-position: center;">
+        <columns>
+          <TableColumn fx:id="tblPos" prefWidth="48.000001430511475" text="Puntos" />
+            <TableColumn fx:id="txtID" minWidth="0.0" prefWidth="44.0" text="ID" />
+          <TableColumn fx:id="tblEquipo" prefWidth="231.99999237060547" text="EQUIPOS" />
+            <TableColumn fx:id="txtGanados" prefWidth="126.4000244140625" text="GANADOS" />
+            <TableColumn fx:id="txtPerdidos" prefWidth="89.60000610351562" text="PERDIDOS" />
+            <TableColumn fx:id="txtEmpates" minWidth="8.0" prefWidth="92.0" text="EMPATES" />
+            <TableColumn fx:id="txtGolesAFavor" minWidth="0.0" prefWidth="112.0" text="GOLES(A FAVOR)" />
+            <TableColumn fx:id="tabGolesContra" prefWidth="140.7999267578125" text="GOLES(EN CONTRA)" />
+        </columns>
+         <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+         </columnResizePolicy>
+         <effect>
+            <ColorAdjust contrast="0.02" hue="-0.39" saturation="0.11" />
+         </effect>
+      </TableView>
+      <GridPane alignment="BOTTOM_CENTER" gridLinesVisible="true" layoutX="295.0" layoutY="-65.0" prefHeight="0.0" prefWidth="408.0">
+        <columnConstraints>
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="21.6" minWidth="10.0" prefWidth="21.6" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="5.599951171875002" minWidth="0.0" prefWidth="0.0" />
+        </columnConstraints>
+         <effect>
+            <Lighting bumpInput="$null" specularConstant="1.62" specularExponent="17.06" surfaceScale="3.06">
+               <light>
+                  <Light.Distant>
+                     <color>
+                        <Color red="0.7093908786773682" blue="1.0" />
+                     </color>
+                  </Light.Distant>
+               </light>
+            </Lighting>
+         </effect>
+      </GridPane>
+      <Accordion layoutX="109.0" layoutY="62.0" />
+      <Label layoutX="36.0" layoutY="99.0" text="ID EQUIPO" textFill="WHITE">
+         <font>
+            <Font name="System Bold" size="15.0" />
+         </font>
+      </Label>
+      <TextField fx:id="txfBuscarTablaPremier" layoutX="129.0" layoutY="97.0" />
+      <Button layoutX="295.0" layoutY="97.0" mnemonicParsing="false" onAction="#buscar" text="Buscar">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Label alignment="CENTER" contentDisplay="CENTER" layoutX="220.0" layoutY="38.0" prefHeight="48.0" prefWidth="458.0" text="   TABLA DE CLASIFICACION" textAlignment="JUSTIFY" textFill="WHITE" textOverrun="CENTER_ELLIPSIS">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Button layoutX="55.0" layoutY="14.0" mnemonicParsing="false" onAction="#CreacionEquiposcene" text="Creacion Equipos">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Button layoutX="203.0" layoutY="14.0" mnemonicParsing="false" onAction="#ModificacionEquiposcene" text="Modificacion Equipos">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Button layoutX="354.0" layoutY="14.0" mnemonicParsing="false" onAction="#CreacionLigascene" text="Creacion Liga">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Button layoutX="590.0" layoutY="14.0" mnemonicParsing="false" onAction="#registratResultadoScene" text="Registrar Resultados">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Button layoutX="465.0" layoutY="14.0" mnemonicParsing="false" onAction="#TablaposicionesScenes" text="Crear Partidos">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Label layoutX="203.0" layoutY="67.0" text="LIGAS" textFill="WHITE">
+         <font>
+            <Font name="System Bold" size="14.0" />
+         </font>
+      </Label>
+      <ComboBox fx:id="ligacombo" layoutX="36.0" layoutY="64.0" onAction="#filtrarequipos" prefWidth="150.0" />
+      <Button layoutX="752.0" layoutY="14.0" mnemonicParsing="false" onAction="#tablapartido" text="Tabla de Partidos">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+   </children>
+</Pane>
