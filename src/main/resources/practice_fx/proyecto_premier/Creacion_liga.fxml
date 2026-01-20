@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.text.Font?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" style="-fx-background-color: beige;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.Controller_CLiga">
+   <children>
+      <ImageView fitHeight="600.0" fitWidth="907.0" layoutX="-7.0">
+         <image>
+            <Image url="@premier.jpg" />
+         </image>
+      </ImageView>
+      <Label layoutX="165.0" layoutY="131.0" text="Creacion de Ligas" textFill="WHITE">
+         <font>
+            <Font name="System Italic" size="24.0" />
+         </font>
+      </Label>
+      <TableView fx:id="Tablaliga" layoutX="488.0" layoutY="131.0" onMouseClicked="#tablaLigas" prefHeight="412.0" prefWidth="372.0" style="-fx-background-color: rgba(255, 255, 255, 0.5);">
+        <columns>
+          <TableColumn fx:id="Colid" prefWidth="91.0" text="ID" />
+          <TableColumn fx:id="Colname" prefWidth="189.0" text="Nombre" />
+            <TableColumn fx:id="Colregion" prefWidth="91.0" text="Region" />
+        </columns>
+      </TableView>
+      <Label layoutX="69.0" layoutY="228.0" text="Nombre de la Liga" textFill="WHITE">
+         <font>
+            <Font name="System Italic" size="18.0" />
+         </font>
+      </Label>
+      <Label layoutX="86.0" layoutY="337.0" text="Region de liga" textFill="WHITE">
+         <font>
+            <Font name="System Italic" size="18.0" />
+         </font>
+      </Label>
+      <TextField fx:id="txtnombreliga" layoutX="238.0" layoutY="229.0" />
+      <TextField fx:id="txtregionliga" layoutX="238.0" layoutY="338.0" />
+      <Button layoutX="149.0" layoutY="440.0" mnemonicParsing="false" onAction="#guardar" text="Guadar">
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Button>
+      <Button layoutX="288.0" layoutY="440.0" mnemonicParsing="false" onAction="#limpiar" text="Limpiar">
+         <font>
+            <Font name="System Italic" size="15.0" />
+         </font>
+      </Button>
+      <Button layoutX="35.0" layoutY="34.0" mnemonicParsing="false" onAction="#CreacionEscene" text="Creacion Equipo" />
+      <Button layoutX="165.0" layoutY="34.0" mnemonicParsing="false" onAction="#ModificacionEscene" text="Modificacion Equipo" />
+      <Button layoutX="323.0" layoutY="34.0" mnemonicParsing="false" onAction="#CreacionPscene" text="Creacion Partidos" />
+      <Button layoutX="464.0" layoutY="34.0" mnemonicParsing="false" onAction="#RegistrarRscene" text="Registrar Resultados" />
+      <Button layoutX="605.0" layoutY="34.0" mnemonicParsing="false" onAction="#TablaposicionesScene" text="Tabla Posiciones" />
+      <Button layoutX="728.0" layoutY="34.0" mnemonicParsing="false" onAction="#tablapartidoscene" text="Tabla de Partidos">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+   </children>
+</Pane>

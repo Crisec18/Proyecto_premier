@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<equipos>
+  <equipo>
+    <idEquipo>1</idEquipo>
+    <nombreEquipo>Nalgas</nombreEquipo>
+    <estadioEquipo>casi miro</estadioEquipo>
+    <ciudadEquipo>culo</ciudadEquipo>
+    <annioFundacion>2026-01-15</annioFundacion>
+  </equipo>
+  <equipo>
+    <idEquipo>2</idEquipo>
+    <nombreEquipo>saidasd</nombreEquipo>
+    <estadioEquipo>awdqwd</estadioEquipo>
+    <ciudadEquipo>awdwdq</ciudadEquipo>
+    <annioFundacion>2026-01-05</annioFundacion>
+  </equipo>
+</equipos>

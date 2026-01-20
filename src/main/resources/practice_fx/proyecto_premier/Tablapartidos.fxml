@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.text.Font?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.Controller_Tablapartidos">
+   <children>
+      <ImageView fitHeight="607.0" fitWidth="906.0" layoutX="-4.0" layoutY="-3.0">
+         <image>
+            <Image url="@premier.jpg" />
+         </image>
+      </ImageView>
+      <TableView fx:id="Tablapartidos" layoutX="-4.0" layoutY="163.0" prefHeight="437.0" prefWidth="906.0" style="-fx-background-color: rgba(255, 255, 255, 0.5);">
+        <columns>
+          <TableColumn fx:id="Colid" prefWidth="75.0" text="ID" />
+          <TableColumn fx:id="Colpartido" prefWidth="156.0" text="Nombre partido" />
+            <TableColumn fx:id="Collocal" minWidth="1.0" prefWidth="83.0" text="Local" />
+            <TableColumn fx:id="Colpuntajelocal" prefWidth="94.0" text="Puntaje" />
+            <TableColumn fx:id="Colvisiatente" prefWidth="116.0" text="Visitante" />
+            <TableColumn fx:id="Colpuntajevisitante" prefWidth="103.0" text="Puntaje" />
+            <TableColumn fx:id="Colfecha" prefWidth="142.0" text="Fecha" />
+            <TableColumn fx:id="Colestado" prefWidth="136.0" text="Estado" />
+        </columns>
+      </TableView>
+      <Label layoutX="36.0" layoutY="98.0" text="Liga" textFill="WHITE">
+         <font>
+            <Font name="System Italic" size="18.0" />
+         </font>
+      </Label>
+      <ComboBox fx:id="comboliga" layoutX="82.0" layoutY="100.0" onAction="#filtrarpartidos" prefWidth="150.0" />
+      <Label layoutX="329.0" layoutY="65.0" text="Calendario De Partidos" textFill="WHITE">
+         <font>
+            <Font name="System Italic" size="24.0" />
+         </font>
+      </Label>
+      <Button layoutX="56.0" layoutY="27.0" mnemonicParsing="false" onAction="#creacionscene" text="Creacion de equipos">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Button layoutX="206.0" layoutY="27.0" mnemonicParsing="false" onAction="#modificacionscene" text="Modificacion Equipos">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Button layoutX="357.0" layoutY="27.0" mnemonicParsing="false" onAction="#crearPartiscene" text="Crear Partidos">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Button layoutX="468.0" layoutY="27.0" mnemonicParsing="false" onAction="#registrarresultscene" text="Registrar Resultados">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Button layoutX="609.0" layoutY="27.0" mnemonicParsing="false" onAction="#crearligascene" text="Crear Liga">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+      <Button layoutX="703.0" layoutY="27.0" mnemonicParsing="false" onAction="#tablaposicionesscene" text="Tabla posiciones">
+         <font>
+            <Font name="System Italic" size="12.0" />
+         </font>
+      </Button>
+   </children>
+</Pane>
