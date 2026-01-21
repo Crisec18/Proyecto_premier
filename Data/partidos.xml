@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<partidos>
+  <partido>
+    <idPartido>1</idPartido>
+    <nombrePartido>equipo1 vs equipo2</nombrePartido>
+    <jornada>Jornada 1</jornada>
+    <estadio>asdadad</estadio>
+    <fecha>2026-01-20</fecha>
+    <liga>europea</liga>
+    <estado>Finalizado</estado>
+    <idEquipoLocal>1</idEquipoLocal>
+    <idEquipoVisitante>2</idEquipoVisitante>
+  </partido>
+  <partido>
+    <idPartido>2</idPartido>
+    <nombrePartido>equipo1 vs equipo2</nombrePartido>
+    <jornada>Jornada 1</jornada>
+    <estadio>sdadadad</estadio>
+    <fecha>2026-01-21</fecha>
+    <liga>latina</liga>
+    <estado>Pendiente</estado>
+    <idEquipoLocal>1</idEquipoLocal>
+    <idEquipoVisitante>2</idEquipoVisitante>
+  </partido>
+  <partido>
+    <idPartido>3</idPartido>
+    <nombrePartido>equipo4 vs equipo3</nombrePartido>
+    <jornada>Jornada 1</jornada>
+    <estadio>asdada</estadio>
+    <fecha>2026-01-21</fecha>
+    <liga>europea</liga>
+    <estado>Pendiente</estado>
+    <idEquipoLocal>4</idEquipoLocal>
+    <idEquipoVisitante>3</idEquipoVisitante>
+  </partido>
+  <partido>
+    <idPartido>4</idPartido>
+    <nombrePartido>equipo1 vs equipo2</nombrePartido>
+    <jornada>Jornada 2</jornada>
+    <estadio>asdadad</estadio>
+    <fecha>2026-01-21</fecha>
+    <liga>europea</liga>
+    <estado>Pendiente</estado>
+    <idEquipoLocal>1</idEquipoLocal>
+    <idEquipoVisitante>2</idEquipoVisitante>
+  </partido>
+</partidos>

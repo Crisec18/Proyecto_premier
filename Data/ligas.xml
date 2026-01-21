@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ligas>
+  <liga>
+    <idliga>1</idliga>
+    <nombreliga>europea</nombreliga>
+    <region>europa</region>
+  </liga>
+  <liga>
+    <idliga>2</idliga>
+    <nombreliga>latina</nombreliga>
+    <region>latam</region>
+  </liga>
+</ligas>
