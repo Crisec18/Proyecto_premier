@@ -2,7 +2,9 @@ package Controllers;
 
 import DTO.Equipos;
 import Data.DataEquipos;
+import Data.DataGestorLiga;
 import Data.Datasingleton;
+import Logic.LogicLigas;
 import Logic.LogicaEquipo;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -53,6 +55,8 @@ public class Controller_MODIEquipos {
 
     private final DataEquipos datosEquipos = DataEquipos.getInstance(null);
     private final LogicaEquipo loq = new LogicaEquipo(datosEquipos);
+    private final DataGestorLiga datosliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+    private final LogicLigas logicaLiga = new LogicLigas(datosliga);
 
 
     @FXML
@@ -61,6 +65,10 @@ public class Controller_MODIEquipos {
             Equipos seleccionado = TableTeams.getSelectionModel().getSelectedItem();
             if (seleccionado == null) {
                 mostrarErrores("Error de validadcion", new Exception(validarformulario()));
+                return;
+            }
+            if(datosliga.equipoTienePartidos(seleccionado)){
+                mostrarErrores("Error de validadacion", new Exception("error de modificacion Equipo asignado a alguna liga"));
                 return;
             }
             if (validarformulario() != null) {
@@ -88,14 +96,20 @@ public class Controller_MODIEquipos {
     }
 
     @FXML
-    void eliminar(ActionEvent event) {
+    void eliminar(ActionEvent event) throws Exception {
             Equipos seleccionado = TableTeams.getSelectionModel().getSelectedItem();
             if(seleccionado== null){
+                mostrarErrores("Error de validadcion", new Exception("No hay ningun equipo seleccionado"));
+                return;
+            }
+            if(datosliga.equipoTienePartidos(seleccionado)){
+                mostrarErrores("Error de validadcion", new Exception("El equipo tiene partidos asignados en alguna liga"));
                 return;
             }
             DataEquipos.getInstance(null).getEquipos().remove(seleccionado);
             limpiar(event);
             TableTeams.refresh();
+            loq.guardar(DataEquipos.getInstance(Path.of("Data/equipos.xml")).getEquipos());
     }
 
     @FXML

@@ -2,6 +2,8 @@ package Controllers;
 
 import DTO.Equipos;
 import Data.DataEquipos;
+import Data.DataGestorLiga;
+import Logic.LogicLigas;
 import Logic.LogicaEquipo;
 import Data.Datasingleton;
 import Logic.LogicaEquipo;
@@ -55,8 +57,9 @@ public class Controller_CEquipos {
     private DatePicker fechacreacion;
 
     private final DataEquipos datosEquipos = DataEquipos.getInstance(null);
-    private final LogicaEquipo loq = new LogicaEquipo(datosEquipos);
-    //private final AtomicInteger idSecuencia = new AtomicInteger(0);
+    private final LogicaEquipo loq = new LogicaEquipo(datosEquipos);;
+    private final DataGestorLiga datosliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+    private final LogicLigas logicaLiga = new LogicLigas(datosliga);
 
     @FXML
     public void initialize() {
@@ -108,6 +111,7 @@ public class Controller_CEquipos {
         } catch (Exception e) {
             mostrarErrores("Se produjo un error general al guardar...", e);
         }
+
     }
 //por revisar
 @FXML
@@ -115,8 +119,7 @@ void eliminar(ActionEvent event) {
     Equipos seleccionado = TableTeams.getSelectionModel().getSelectedItem();
 
     if (seleccionado == null) {
-        mostrarErrores("Eliminar",
-                new Exception("Debe seleccionar un equipo"));
+        mostrarErrores("Eliminar", new Exception("Debe seleccionar un equipo"));
         return;
     }
     datosEquipos.getEquipos().remove(seleccionado);
@@ -132,6 +135,7 @@ void eliminar(ActionEvent event) {
     private void cargar(){
         try {
             datosEquipos.getEquipos().setAll(loq.cargarEquipos());
+            datosEquipos.actualizarContadorId();
         } catch (Exception e) {
             mostrarErrores("Error al cargar equipos", e);
         }

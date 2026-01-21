@@ -5,6 +5,8 @@ module practice_fx.proyecto_premier {
     requires javafx.base;
     requires javafx.graphics;
     requires jdk.management.agent;
+    requires java.xml;
+
 
 
     opens practice_fx.proyecto_premier to javafx.fxml;

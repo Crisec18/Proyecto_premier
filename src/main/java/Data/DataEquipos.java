@@ -69,6 +69,20 @@ public class DataEquipos {
         equipos.add(equipo);
     }
 
+    public void actualizarContadorId() {
+        int maxId = 0;
+        for (Equipos equipo : equipos) {
+            try {
+                int idActual = Integer.parseInt(equipo.idEquipoProperty().getValue());
+                if (idActual > maxId) {
+                    maxId = idActual;
+                }
+            } catch (NumberFormatException e) {
+            }
+        }
+        idcounter.set(maxId + 1);
+    }
+
 //XML...............................................................................................................
     //cargar desde el xml
     public List<Equipos> cargar() throws Exception {
@@ -106,13 +120,23 @@ public class DataEquipos {
             String ciudadEquipo = getText(e, "ciudadEquipo");
             LocalDate annioFundacion = LocalDate.parse(getText(e, "annioFundacion"));
 
-            equipos.add(new Equipos(
+            Equipos equipo = new Equipos(
                     String.valueOf(idEquipo),
                     nombreEquipo,
                     estadioEquipo,
                     ciudadEquipo,
                     annioFundacion
-            ));
+            );
+
+            equipo.setPuntos(parseInt(getText(e, "puntos"), 0));
+            equipo.setpartidosgandos(parseInt(getText(e, "partidosGanados"), 0));
+            equipo.setPartidosempatados(parseInt(getText(e, "partidosEmpatados"), 0));
+            equipo.setpartidosperdidos(parseInt(getText(e, "partidosPerdidos"), 0));
+            equipo.setGolesafavor(parseInt(getText(e, "golesAFavor"), 0));
+            equipo.setGolesencontra(parseInt(getText(e, "golesEnContra"), 0));
+            equipo.setPartidosjugados(parseInt(getText(e, "partidosJugados"), 0));
+
+            listaEquipos.add(equipo);
         }
         return  listaEquipos;
     }
@@ -138,6 +162,14 @@ public class DataEquipos {
             agregar(doc, eq, "estadioEquipo", equipo.estadioEquipoProperty().getValue());
             agregar(doc, eq, "ciudadEquipo", equipo.ciudadEquipoProperty().getValue());
             agregar(doc, eq, "annioFundacion", String.valueOf(equipo.getAnnio()));
+
+            agregar(doc, eq, "puntos", String.valueOf(equipo.puntosProperty().get()));
+            agregar(doc, eq, "partidosGanados", String.valueOf(equipo.ganadosProperty().get()));
+            agregar(doc, eq, "partidosEmpatados", String.valueOf(equipo.empatesProperty().get()));
+            agregar(doc, eq, "partidosPerdidos", String.valueOf(equipo.perdidosProperty().get()));
+            agregar(doc, eq, "golesAFavor", String.valueOf(equipo.golesFavorProperty().get()));
+            agregar(doc, eq, "golesEnContra", String.valueOf(equipo.golesContraProperty().get()));
+            agregar(doc, eq, "partidosJugados", String.valueOf(equipo.jugadosProperty().get()));
         }
 
         TransformerFactory tf = TransformerFactory.newInstance();

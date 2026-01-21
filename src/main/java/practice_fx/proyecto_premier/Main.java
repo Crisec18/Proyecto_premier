@@ -1,6 +1,7 @@
 package practice_fx.proyecto_premier;
 
 import Data.DataEquipos;
+import Data.DataGestorLiga;
 import Data.DataPartidos;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -17,8 +18,8 @@ public class Main extends Application {
         //Rutas de los xml
         DataEquipos.getInstance(Path.of("Data/equipos.xml"));
 
-        //DataPartidos.getInstance(Path.of("Data/partidos.xml"));
-        //DataResultados.getInstance(Path.of("Data/resultados.xml"));
+        DataPartidos.getInstance(Path.of("Data/partidos.xml"));
+        DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/practice_fx/proyecto_premier/creacion_equipos.fxml")

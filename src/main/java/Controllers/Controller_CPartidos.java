@@ -1,6 +1,7 @@
 package Controllers;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.LocalDate;
 
 import DTO.Equipos;
@@ -9,6 +10,9 @@ import DTO.PartidosDTO;
 import Data.DataEquipos;
 import Data.DataGestorLiga;
 import Data.DataPartidos;
+import Logic.LogicLigas;
+import Logic.LogicPartidos;
+import Logic.LogicaEquipo;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -96,11 +100,18 @@ public class Controller_CPartidos {
     @FXML
     private Label visitlabel;
 
+    private final DataPartidos datosPartidos= DataPartidos.getInstance(Path.of("Data/partidos.xml"));
+    private final LogicPartidos loq = new LogicPartidos(datosPartidos);
+    private final DataEquipos dataEquipos = DataEquipos.getInstance(Path.of("Data/equipos.xml"));
+    private final LogicaEquipo logicaEquipo = new LogicaEquipo(dataEquipos);
+    private final DataGestorLiga dataGestorLiga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+    private final LogicLigas loqligas = new LogicLigas(dataGestorLiga);
+
     @FXML
     void buscar(ActionEvent event) {
         String busquedatxt = buscartextfield.getText().toLowerCase();
         try{
-            DataEquipos.getInstance(null).getEquiposfiltrados().setPredicate(p->{
+            DataEquipos.getInstance(Path.of("Data/ligas.xml")).getEquiposfiltrados().setPredicate(p->{
                 if(busquedatxt.isEmpty()) return true;
                 return (p.idEquipoProperty().get().toLowerCase().contains(busquedatxt) || p.nombreEquipoProperty().get().toLowerCase().contains(busquedatxt)
                         || p.ciudadEquipoProperty().get().toLowerCase().contains(busquedatxt));
@@ -133,6 +144,11 @@ public class Controller_CPartidos {
     @FXML
     void guardar(ActionEvent event) {
         try {
+
+            if (validarformulario() != null) {
+                mostrarErrores("Error de validación", new Exception(validarformulario()));
+                return;
+            }
             Equipos local = TableTeams.getSelectionModel().getSelectedItem();
             Equipos visitante = TableVisitante.getSelectionModel().getSelectedItem();
 
@@ -161,7 +177,32 @@ public class Controller_CPartidos {
             }
             String nombreLiga = Ligacombo.getSelectionModel().getSelectedItem();
             String jornada = jornadacombo.getSelectionModel().getSelectedItem();
-            LigaDTO liga1 = DataGestorLiga.getInstance().getLigas().stream()
+            boolean localYaEnLiga = dataGestorLiga.equipoYaEnLiga(local, nombreLiga);
+            boolean visitanteYaEnLiga = dataGestorLiga.equipoYaEnLiga(visitante, nombreLiga);
+
+            if (!localYaEnLiga) {
+                if (dataGestorLiga.equipoEnOtraLiga(local, nombreLiga, datosPartidos)) {
+                    mostrarErrores("Error de ligas", new Exception("El equipo local ya pertenece a otra liga diferente"));
+                    return;
+                }
+            }
+
+            if (!visitanteYaEnLiga) {
+                if (dataGestorLiga.equipoEnOtraLiga(visitante, nombreLiga, datosPartidos)) {
+                    mostrarErrores("Error de ligas", new Exception("El equipo visitante ya pertenece a otra liga diferente"));
+                    return;
+                }
+            }
+
+            if (dataGestorLiga.verificarcamposequipos(nombreLiga)){
+                mostrarErrores("Error de ligas", new Exception("Liga llena (Espacio para equipos limitado)"));
+                return;
+            }
+            if(dataGestorLiga.verificarcampospartido(nombreLiga)){
+                mostrarErrores("Error de ligas", new Exception("Liga llena (Espacio para partidos limitado)"));
+                return;
+            }
+            LigaDTO liga1 = DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().stream()
                     .filter(l -> l.nombreLigaProperty().get().equals(nombreLiga))
                     .findFirst()
                     .orElse(null);
@@ -186,8 +227,7 @@ public class Controller_CPartidos {
             }
 
             String partidonombre = local.nombreEquipoProperty().get() + " vs " + visitante.nombreEquipoProperty().get();
-
-            boolean partidoDuplicado = DataPartidos.getInstance().getPartidos().stream()
+            boolean partidoDuplicado = datosPartidos.getPartidos().stream()
                     .anyMatch(p ->
                             p.getlocal().idEquipoProperty().get().equals(local.idEquipoProperty().get()) &&
                                     p.getvisitante().idEquipoProperty().get().equals(visitante.idEquipoProperty().get()) &&
@@ -198,18 +238,21 @@ public class Controller_CPartidos {
                 mostrarErrores("Partido duplicado", new Exception("Ya existe un partido entre estos equipos en la misma jornada y liga"));
                 return;
             }
-            DataPartidos.getInstance().agregarPartido(partidonombre,
+
+            PartidosDTO nuevoPartido = datosPartidos.agregarPartido(
+                    partidonombre,
                     local,
                     visitante,
-                    jornadacombo.getSelectionModel().getSelectedItem(), estadiocombo.getSelectionModel().getSelectedItem() ,
+                    jornadacombo.getSelectionModel().getSelectedItem(),
+                    estadiocombo.getSelectionModel().getSelectedItem(),
                     fechapicker.getValue());
 
-            PartidosDTO nuevoPartido = DataPartidos.getInstance().getPartidoPorNombre(partidonombre);
+
             nuevoPartido.setliga(nombreLiga);
             nuevoPartido.getlocal().setPartidosjugados(nuevoPartido.getlocal().jugadosProperty().get() + 1);
             nuevoPartido.getvisitante().setPartidosjugados(nuevoPartido.getvisitante().jugadosProperty().get() + 1);
 
-            for (LigaDTO liga : DataGestorLiga.getInstance().getLigas()) {
+            for (LigaDTO liga : DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas()) {
                 if (liga.nombreLigaProperty().get().equals(nombreLiga)) {
 
                     if (!liga.getequipos().contains(local)) {
@@ -225,6 +268,14 @@ public class Controller_CPartidos {
                     break;
                 }
             }
+                try {
+                    loq.guardar(datosPartidos.getPartidos());
+                    logicaEquipo.guardar(dataEquipos.getEquipos());
+
+                } catch (Exception e) {
+                    mostrarErrores("Error al guardar partidos en XML", e);
+                }
+
             limpiarformulario();
         }catch (Exception e){
             mostrarErrores("Error al guardar el partido", new Exception(validarformulario()) );
@@ -245,6 +296,13 @@ public class Controller_CPartidos {
     }
     @FXML
     void initialize() {
+        try{
+            dataGestorLiga.getLigas().setAll(loqligas.cargarligas());
+            dataGestorLiga.actualizarContadorId();
+        }catch (Exception e){
+            mostrarErrores("Error al inicializar la escena", e);
+        }
+
         // Configurar columnas de tabla de equipos locales
         Colid.setCellValueFactory(data -> data.getValue().idEquipoProperty());
         ColName.setCellValueFactory(data -> data.getValue().nombreEquipoProperty());
@@ -252,15 +310,23 @@ public class Controller_CPartidos {
         Colnombrevisit.setCellValueFactory(data -> data.getValue().nombreEquipoProperty());
         
         // Asignar datos a las tablas
-        TableTeams.setItems(DataEquipos.getInstance(null).getEquiposfiltrados());
-        TableVisitante.setItems(DataEquipos.getInstance(null).getFiltradovisitante());
+        TableTeams.setItems(DataEquipos.getInstance(Path.of("Data/equipos.xml")).getEquiposfiltrados());
+        TableVisitante.setItems(DataEquipos.getInstance(Path.of("Data/equipos.xml")).getFiltradovisitante());
+        try {
+            datosPartidos.getPartidos().setAll(loq.cargarpartidos());
+            datosPartidos.actualizarContadorId();
+        } catch (Exception e) {
+            mostrarErrores("Error al cargar partidos", e);
+        }
+
         for (int i = 1; i <= 3; i++) {
             jornadacombo.getItems().add("Jornada " + i);
         }
+
         try {
-            DataGestorLiga.getInstance().getLigas().forEach(liga -> {
+            for (LigaDTO liga : dataGestorLiga.getLigas()) {
                 Ligacombo.getItems().add(liga.nombreLigaProperty().get());
-            });
+            }
         } catch (Exception e) {
             mostrarErrores("Error al cargar ligas", e);
         }
@@ -328,14 +394,14 @@ public class Controller_CPartidos {
         }
     }
     private LigaDTO buscarLigaPorNombre(String nombreLiga) {
-        return DataGestorLiga.getInstance().getLigas().stream()
+        return DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().stream()
                 .filter(l -> l.nombreLigaProperty().get().equals(nombreLiga))
                 .findFirst()
                 .orElse(null);
     }
 
     private boolean existePartidoDuplicado(Equipos local, Equipos visitante, String jornada, String nombreLiga) {
-        return DataPartidos.getInstance().getPartidos().stream()
+        return DataPartidos.getInstance(Path.of("Data/partidos.xml")).getPartidos().stream()
                 .anyMatch(p ->
                         p.getlocal().idEquipoProperty().get().equals(local.idEquipoProperty().get()) &&
                                 p.getvisitante().idEquipoProperty().get().equals(visitante.idEquipoProperty().get()) &&
@@ -345,7 +411,7 @@ public class Controller_CPartidos {
     }
 
     private void crearYAsociarPartido(String partidonombre, Equipos local, Equipos visitante, String jornada, String nombreLiga) {
-        DataPartidos.getInstance().agregarPartido(
+        DataPartidos.getInstance(null).agregarPartido(
                 partidonombre,
                 local,
                 visitante,
@@ -353,12 +419,12 @@ public class Controller_CPartidos {
                 estadiocombo.getSelectionModel().getSelectedItem(),
                 fechapicker.getValue()
         );
-        PartidosDTO nuevoPartido = DataPartidos.getInstance().getPartidoPorNombre(partidonombre);
+        PartidosDTO nuevoPartido = DataPartidos.getInstance(null).getPartidoPorNombre(partidonombre);
         nuevoPartido.setliga(nombreLiga);
         nuevoPartido.getlocal().setPartidosjugados(nuevoPartido.getlocal().jugadosProperty().get() + 1);
         nuevoPartido.getvisitante().setPartidosjugados(nuevoPartido.getvisitante().jugadosProperty().get() + 1);
 
-        for (LigaDTO liga : DataGestorLiga.getInstance().getLigas()) {
+        for (LigaDTO liga : DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas()) {
             if (liga.nombreLigaProperty().get().equals(nombreLiga)) {
                 if (!liga.getequipos().contains(local)) {
                     liga.getequipos().add(local);

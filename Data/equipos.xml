@@ -2,16 +2,72 @@
 <equipos>
   <equipo>
     <idEquipo>1</idEquipo>
-    <nombreEquipo>Nalgas</nombreEquipo>
-    <estadioEquipo>casi miro</estadioEquipo>
-    <ciudadEquipo>culo</ciudadEquipo>
-    <annioFundacion>2026-01-15</annioFundacion>
+    <nombreEquipo>equipo1</nombreEquipo>
+    <estadioEquipo>asdadad</estadioEquipo>
+    <ciudadEquipo>dwadad</ciudadEquipo>
+    <annioFundacion>2026-01-21</annioFundacion>
+    <puntos>0</puntos>
+    <partidosGanados>0</partidosGanados>
+    <partidosEmpatados>0</partidosEmpatados>
+    <partidosPerdidos>1</partidosPerdidos>
+    <golesAFavor>2</golesAFavor>
+    <golesEnContra>3</golesEnContra>
+    <partidosJugados>3</partidosJugados>
   </equipo>
   <equipo>
     <idEquipo>2</idEquipo>
-    <nombreEquipo>saidasd</nombreEquipo>
-    <estadioEquipo>awdqwd</estadioEquipo>
-    <ciudadEquipo>awdwdq</ciudadEquipo>
-    <annioFundacion>2026-01-05</annioFundacion>
+    <nombreEquipo>equipo2</nombreEquipo>
+    <estadioEquipo>sdadadad</estadioEquipo>
+    <ciudadEquipo>dasdadad</ciudadEquipo>
+    <annioFundacion>2026-01-21</annioFundacion>
+    <puntos>3</puntos>
+    <partidosGanados>1</partidosGanados>
+    <partidosEmpatados>0</partidosEmpatados>
+    <partidosPerdidos>0</partidosPerdidos>
+    <golesAFavor>3</golesAFavor>
+    <golesEnContra>2</golesEnContra>
+    <partidosJugados>3</partidosJugados>
+  </equipo>
+  <equipo>
+    <idEquipo>3</idEquipo>
+    <nombreEquipo>equipo3</nombreEquipo>
+    <estadioEquipo>sdadas</estadioEquipo>
+    <ciudadEquipo>dadad</ciudadEquipo>
+    <annioFundacion>2026-01-22</annioFundacion>
+    <puntos>0</puntos>
+    <partidosGanados>0</partidosGanados>
+    <partidosEmpatados>0</partidosEmpatados>
+    <partidosPerdidos>0</partidosPerdidos>
+    <golesAFavor>0</golesAFavor>
+    <golesEnContra>0</golesEnContra>
+    <partidosJugados>1</partidosJugados>
+  </equipo>
+  <equipo>
+    <idEquipo>4</idEquipo>
+    <nombreEquipo>equipo4</nombreEquipo>
+    <estadioEquipo>asdada</estadioEquipo>
+    <ciudadEquipo>dsadada</ciudadEquipo>
+    <annioFundacion>2026-01-21</annioFundacion>
+    <puntos>0</puntos>
+    <partidosGanados>0</partidosGanados>
+    <partidosEmpatados>0</partidosEmpatados>
+    <partidosPerdidos>0</partidosPerdidos>
+    <golesAFavor>0</golesAFavor>
+    <golesEnContra>0</golesEnContra>
+    <partidosJugados>1</partidosJugados>
+  </equipo>
+  <equipo>
+    <idEquipo>5</idEquipo>
+    <nombreEquipo>equipo5</nombreEquipo>
+    <estadioEquipo>asdad</estadioEquipo>
+    <ciudadEquipo>dada</ciudadEquipo>
+    <annioFundacion>2026-01-21</annioFundacion>
+    <puntos>0</puntos>
+    <partidosGanados>0</partidosGanados>
+    <partidosEmpatados>0</partidosEmpatados>
+    <partidosPerdidos>0</partidosPerdidos>
+    <golesAFavor>0</golesAFavor>
+    <golesEnContra>0</golesEnContra>
+    <partidosJugados>0</partidosJugados>
   </equipo>
 </equipos>

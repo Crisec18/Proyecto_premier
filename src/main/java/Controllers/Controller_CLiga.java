@@ -3,6 +3,7 @@ package Controllers;
 import DTO.LigaDTO;
 import Data.DataEquipos;
 import Data.DataGestorLiga;
+import Logic.LogicLigas;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -15,6 +16,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class Controller_CLiga {
 
@@ -35,11 +37,12 @@ public class Controller_CLiga {
 
     @FXML
     private TableView<LigaDTO> Tablaliga;
-
+        DataGestorLiga gestorliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+        LogicLigas lq = new LogicLigas(gestorliga);
     @FXML
     void guardar(ActionEvent event) {
         try {
-            boolean existe = DataGestorLiga.getInstance().getLigas().stream()
+            boolean existe = DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().stream()
                     .anyMatch(Liga -> Liga.nombreLigaProperty().get().equals(txtnombreliga.getText()));
             if (existe) {
                 mostrarErrores("Error de Existencia", new Exception(validarformulario()));
@@ -50,12 +53,25 @@ public class Controller_CLiga {
                 mostrarErrores("Error de validadcion", new Exception(validarformulario()));
                 return;
             }
-            DataGestorLiga.getInstance().agregarLiga(txtnombreliga.getText(),
+            DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).agregarLiga(txtnombreliga.getText(),
                     txtregionliga.getText());
-            Tablaliga.refresh();
+            try {
+                lq.guardar(gestorliga.getLigas());
+                Tablaliga.refresh();
+            }catch (Exception e){
+                mostrarErrores("Se produjo un error al guardar...", e);
+            }
 
         }catch (Exception e){
             mostrarErrores("Se produjo un error al guardar...", e);
+        }
+    }
+    private void cargar(){
+        try {
+            gestorliga.getLigas().setAll(lq.cargarligas());
+            gestorliga.actualizarContadorId();
+        } catch (Exception e) {
+            mostrarErrores("Error al cargar equipos", e);
         }
     }
 
@@ -75,7 +91,8 @@ public class Controller_CLiga {
         Colid.setCellValueFactory(data-> data.getValue().idLigaProperty());
         Colname.setCellValueFactory(data->data.getValue().nombreLigaProperty());
         Colregion.setCellValueFactory(data->data.getValue().regionLigaProperty());
-        Tablaliga.setItems(DataGestorLiga.getInstance().getLigasfiltradas());
+        Tablaliga.setItems(DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigasfiltradas());
+        cargar();
     }
 
     void limpiarformulario(){

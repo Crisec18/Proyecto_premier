@@ -3,6 +3,7 @@ package Controllers;
 import DTO.Equipos;
 import Data.DataEquipos;
 import Data.DataGestorLiga;
+import Logic.LogicLigas;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,6 +17,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class Controller_TablaGeneral {
     @FXML
@@ -30,9 +32,16 @@ public class Controller_TablaGeneral {
     @FXML private TableColumn<Equipos, Number> txtGolesAFavor;
     @FXML private TableColumn<Equipos, Number> tabGolesContra;
     @FXML private TextField txfBuscarTablaPremier;
-
+    DataGestorLiga  gestionliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+    LogicLigas  log = new LogicLigas(gestionliga);
     @FXML
     public void initialize() {
+        try{
+            gestionliga.getLigas().setAll(log.cargarligas());
+            gestionliga.actualizarContadorId();
+        }catch (Exception e){
+            mostrarErrores("Error al inicializar la escena", e);
+        }
         txtID.setCellValueFactory(data -> data.getValue().idEquipoProperty());
         tblEquipo.setCellValueFactory(data -> data.getValue().nombreEquipoProperty());
         txtGanados.setCellValueFactory(data -> data.getValue().ganadosProperty());
@@ -42,14 +51,15 @@ public class Controller_TablaGeneral {
         tabGolesContra.setCellValueFactory(data -> data.getValue().golesContraProperty());
         tblPos.setCellValueFactory(data -> data.getValue().puntosProperty());
         try {
-            DataGestorLiga.getInstance().getLigas().forEach(liga -> {
+            DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().forEach(liga -> {
                 ligacombo.getItems().add(liga.nombreLigaProperty().get());
             });
         } catch (Exception e) {
             mostrarErrores("Error al cargar ligas", e);
         }
 
-        tblLista.setItems(DataGestorLiga.getInstance().getEquiposFiltrados());
+        tblLista.setItems(DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getEquiposFiltrados());
+        cargar();
 
 
 
@@ -59,18 +69,28 @@ public class Controller_TablaGeneral {
         tblLista.getSortOrder().setAll(tblPos, txtGolesAFavor);
     }
 
+    private void cargar() {
+        try {
+            gestionliga.getLigas().setAll(log.cargarligas());
+            gestionliga.actualizarContadorId();
+        } catch (Exception e) {
+            mostrarErrores("Error al cargar equipos", e);
+        }
+    }
+
+
 
     @FXML
     void buscar(ActionEvent event) {
             String ligaSeleccionada = ligacombo.getSelectionModel().getSelectedItem();
 
             if (ligaSeleccionada == null || ligaSeleccionada.isEmpty()) {
-                tblLista.setItems(DataGestorLiga.getInstance().getEquiposFiltrados());
+                tblLista.setItems(DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getEquiposFiltrados());
                 return;
             }
 
             try {
-                ObservableList<Equipos> equiposLiga = DataGestorLiga.getInstance().getEquiposPorLiga(ligaSeleccionada);
+                ObservableList<Equipos> equiposLiga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getEquiposPorLiga(ligaSeleccionada);
 
                 tblLista.setItems(equiposLiga);
                 tblLista.getSortOrder().setAll(tblPos, txtGolesAFavor);
@@ -132,7 +152,7 @@ public class Controller_TablaGeneral {
             return;
         }
         try {
-            ObservableList<Equipos> equiposLiga = DataGestorLiga.getInstance().getEquiposPorLiga(ligaSeleccionada);
+            ObservableList<Equipos> equiposLiga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getEquiposPorLiga(ligaSeleccionada);
             tblLista.setItems(equiposLiga);
             tblLista.getSortOrder().setAll(tblPos, txtGolesAFavor);
             tblLista.sort();

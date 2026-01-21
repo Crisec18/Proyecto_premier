@@ -1,6 +1,7 @@
 package Controllers;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import DTO.Equipos;
 import DTO.LigaDTO;
@@ -8,6 +9,7 @@ import DTO.PartidosDTO;
 import Data.DataEquipos;
 import Data.DataGestorLiga;
 import Data.DataPartidos;
+import Logic.LogicPartidos;
 import Logic.LogicaEquipo;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -109,8 +111,11 @@ public class Controller_RegistrarResultados {
         cambiarEscena(event,"Tablapartidos.fxml");
     }
 
-    private final DataEquipos dataEquipos = DataEquipos.getInstance(null);
-    private final LogicaEquipo loq = new LogicaEquipo(dataEquipos);
+    private final DataPartidos dataPartidos = DataPartidos.getInstance(null);
+    private final LogicPartidos loq = new LogicPartidos(dataPartidos);
+
+    DataEquipos dataEquipos = DataEquipos.getInstance(Path.of("Data/equipos.xml"));
+    LogicaEquipo logicEquipos = new LogicaEquipo(dataEquipos);
 
 
     @FXML
@@ -119,7 +124,7 @@ public class Controller_RegistrarResultados {
             String texto = buscartxt.getText().toLowerCase().trim();
             String jornada = combojornada.getSelectionModel().getSelectedItem();
             String liga = comboligas.getSelectionModel().getSelectedItem();
-            DataPartidos.getInstance().getPartidosfiltrados().setPredicate(partido -> {
+            DataPartidos.getInstance(null).getPartidosfiltrados().setPredicate(partido -> {
                 if (!texto.isEmpty()) {
                     String nombre = partido.nombrepartidoProperty().get().toLowerCase();
                     if (!nombre.contains(texto)) return false;
@@ -129,7 +134,7 @@ public class Controller_RegistrarResultados {
                 }
                 if (liga != null) {
                     boolean encontrado = false;
-                    for (LigaDTO l : DataGestorLiga.getInstance().getLigas()) {
+                    for (LigaDTO l : DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas()) {
                         if (l.nombreLigaProperty().get().equals(liga)) {
                             if (l.getpartidos().contains(partido)) {
                                 encontrado = true;
@@ -160,16 +165,46 @@ public class Controller_RegistrarResultados {
         Colid.setCellValueFactory(data -> data.getValue().idpartidoProperty());
         Colname.setCellValueFactory(data -> data.getValue().nombrepartidoProperty());
         estadopartido.setCellValueFactory(data -> data.getValue().estadoProperty());
-        Tablapartidos.setItems(DataPartidos.getInstance().getPartidosfiltrados());
         for (int i = 1; i <= 3; i++) {
             combojornada.getItems().add("Jornada " + i);
         }
         try {
-            DataGestorLiga.getInstance().getLigas().forEach(liga -> {
+            DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().forEach(liga -> {
                 comboligas.getItems().add(liga.nombreLigaProperty().get());
             });
         } catch (Exception e) {
             mostrarErrores("Error al cargar ligas", e);
+        }
+
+
+    }
+    @FXML
+    void fltrarcombo(ActionEvent event) {
+        Tablapartidos.setItems(DataPartidos.getInstance(Path.of("Data/partidos.xml")).getPartidosfiltrados());
+        cargar();
+        filtrarpartidosPorLiga();
+    }
+
+
+    private void cargar(){
+        try {
+            dataPartidos.getPartidos().setAll(loq.cargarpartidos());
+            dataPartidos.actualizarContadorId();
+        } catch (Exception e) {
+            mostrarErrores("Error al cargar partidos", e);
+        }
+    }
+    
+    private void filtrarpartidosPorLiga() {
+        String ligaSeleccionada = comboligas.getSelectionModel().getSelectedItem();
+        if (ligaSeleccionada == null || ligaSeleccionada.isEmpty()) {
+            dataPartidos.getPartidosfiltrados().setPredicate(partido -> false);
+        } else {
+            // filtrar solo los partidos de la liga seleccionda
+            dataPartidos.getPartidosfiltrados().setPredicate(partido -> {
+                String ligaPartido = partido.getliga().get();
+                return ligaPartido != null && ligaPartido.equals(ligaSeleccionada);
+            });
         }
     }
 
@@ -191,9 +226,16 @@ public class Controller_RegistrarResultados {
     @FXML
     void guardar(ActionEvent event) {
         try {
+            // Validar que haya una liga seleccionada
+            if (comboligas.getSelectionModel().getSelectedItem() == null) {
+                mostrarErrores("Liga no seleccionada", new Exception("Debe seleccionar una liga antes de registrar resultados."));
+                return;
+            }
+            
             PartidosDTO partidos = Tablapartidos.getSelectionModel().getSelectedItem();
 
             if (partidos == null) {
+                mostrarErrores("Partido no seleccionado", new Exception("Debe seleccionar un partido de la tabla."));
                 return;
             }
             if (txtGFLocal.getText().trim().isEmpty() || txtGFvisit.getText().trim().isEmpty()) {
@@ -251,7 +293,15 @@ public class Controller_RegistrarResultados {
             partidos.getvisitante().setGolesencontra(partidos.getvisitante().golesContraProperty().get() + goleslocal);
 
             partidos.estadoProperty().set("Finalizado");
-            Tablapartidos.refresh();
+            try {
+                loq.guardar(dataPartidos.getPartidos());
+                logicEquipos.guardar(dataEquipos.getEquipos());
+                Tablapartidos.refresh();
+            } catch (Exception e) {
+                mostrarErrores("Error al guardar partidos en XML", e);
+            }
+
+
 
             javafx.animation.Timeline timeline = new javafx.animation.Timeline(
                     new javafx.animation.KeyFrame(javafx.util.Duration.seconds(3),
@@ -269,7 +319,7 @@ public class Controller_RegistrarResultados {
         try {
             java.util.Random random = new java.util.Random();
 
-            for (PartidosDTO partido : DataPartidos.getInstance().getPartidos()) {
+            for (PartidosDTO partido : DataPartidos.getInstance(Path.of("Data/partidos.xml")).getPartidos()) {
                 if (partido.estadoProperty().get().equals("Pendiente")) {
 
                     int goleslocal = random.nextInt(6);

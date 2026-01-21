@@ -3,6 +3,7 @@ package Controllers;
 import DTO.PartidosDTO;
 import Data.DataGestorLiga;
 import Data.DataPartidos;
+import Logic.LogicLigas;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -16,6 +17,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.LocalDate;
 
 public class Controller_Tablapartidos {
@@ -49,9 +51,17 @@ public class Controller_Tablapartidos {
 
     @FXML
     private ComboBox<String> comboliga;
+    DataGestorLiga  gestionliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+    LogicLigas log = new LogicLigas(gestionliga);
 
     @FXML
     public void initialize() {
+        try{
+            gestionliga.getLigas().setAll(log.cargarligas());
+            gestionliga.actualizarContadorId();
+        }catch (Exception e){
+            mostrarErrores("Error al inicializar la escena", e);
+        }
         Colid.setCellValueFactory(data -> data.getValue().idpartidoProperty());
         Colpartido.setCellValueFactory(data -> data.getValue().nombrepartidoProperty());
         Collocal.setCellValueFactory(data -> data.getValue().getlocal().nombreEquipoProperty());
@@ -63,13 +73,13 @@ public class Controller_Tablapartidos {
         Colpuntajevisitante.setCellValueFactory(data -> data.getValue().getgolesvisitante());
         Colestado.setCellValueFactory(data -> data.getValue().estadoProperty());
         try {
-            DataGestorLiga.getInstance().getLigas().forEach(liga -> {
+            DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().forEach(liga -> {
                 comboliga.getItems().add(liga.nombreLigaProperty().get());
             });
         } catch (Exception e) {
             mostrarErrores("Error al cargar ligas", e);
         }
-        Tablapartidos.setItems(DataGestorLiga.getInstance().getTodosLosPartidos());
+        Tablapartidos.setItems(DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getTodosLosPartidos());
     }
 
     @FXML
@@ -95,12 +105,12 @@ public class Controller_Tablapartidos {
         String ligaSeleccionada = comboliga.getSelectionModel().getSelectedItem();
 
         if (ligaSeleccionada == null || ligaSeleccionada.isEmpty() || ligaSeleccionada.equals("Todas")) {
-            Tablapartidos.setItems(DataGestorLiga.getInstance().getTodosLosPartidos());
+            Tablapartidos.setItems(DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getTodosLosPartidos());
             return;
         }
 
         try {
-            ObservableList<PartidosDTO> partidosLiga = DataGestorLiga.getInstance().getPartidosPorLiga(ligaSeleccionada);
+            ObservableList<PartidosDTO> partidosLiga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getPartidosPorLiga(ligaSeleccionada);
             Tablapartidos.setItems(partidosLiga);
 
         } catch (Exception e) {

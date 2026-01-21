@@ -6,6 +6,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.util.LinkedList;
+import java.util.Map;
 
 public class LigaDTO {
     StringProperty id;
@@ -47,6 +48,9 @@ public class LigaDTO {
         return ligatamano;
     }
 
+    public StringProperty idpartidoProperty() {
+        return id;
+    }
 
     public StringProperty getNombre() {
         return nombre;
@@ -54,5 +58,9 @@ public class LigaDTO {
 
     public ObservableList<Equipos> getEquipos() {
         return equipos;
+    }
+
+    public StringProperty regionligaproperty() {
+        return region;
     }
 }

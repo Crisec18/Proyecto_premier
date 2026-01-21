@@ -54,6 +54,8 @@ public class Equipos {
         public void setNombre(String nombre1) { this.nombre.set(nombre1); }
         public void setEstadio(String estadio1) { this.estadio.set(estadio1); }
         public void setCiudad(String ciudad1) { this.ciudad.set(ciudad1); }
+        public void setpartidosgandos(int partidosgando){this.partidosganados.set(partidosgando);}
+        public void setpartidosperdidos(int partidosperdido){this.partidosperdidos.set(partidosperdido);}
 
         public void setPartidosganados() { this.partidosganados.set(this.partidosganados.get() + 1);}
         public void setPartidosempatados(int valor) { this.partidosempatados.set(valor); }
