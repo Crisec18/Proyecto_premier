@@ -53,10 +53,18 @@ public class Controller_MODIEquipos {
     @FXML
     private TextField aniofundaciontxt;
 
+    @FXML
+    private Label lblContadorModificar;
+
     private final DataEquipos datosEquipos = DataEquipos.getInstance(null);
     private final LogicaEquipo loq = new LogicaEquipo(datosEquipos);
     private final DataGestorLiga datosliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
     private final LogicLigas logicaLiga = new LogicLigas(datosliga);
+
+    private void actualizarContador() {
+        int total = DataEquipos.getInstance(null).getEquipos().size();
+        lblContadorModificar.setText("Equipos Registrados: " + total);
+    }
 
 
     @FXML
@@ -93,6 +101,7 @@ public class Controller_MODIEquipos {
         ColEstadio.setCellValueFactory(data->data.getValue().estadioEquipoProperty());
         Colciudad.setCellValueFactory(data->data.getValue().ciudadEquipoProperty());
         TableTeams.setItems(DataEquipos.getInstance(null).getEquiposfiltrados());
+        actualizarContador();
     }
 
     @FXML

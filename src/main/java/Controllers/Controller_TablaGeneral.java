@@ -1,7 +1,7 @@
 package Controllers;
 
 import DTO.Equipos;
-import Data.DataEquipos;
+import DTO.LigaDTO;
 import Data.DataGestorLiga;
 import Logic.LogicLigas;
 import javafx.collections.ObservableList;
@@ -12,16 +12,15 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 public class Controller_TablaGeneral {
-    @FXML
-    private ComboBox<String> ligacombo;
+    @FXML private ComboBox<String> ligacombo;
     @FXML private TableView<Equipos> tblLista;
     @FXML private TableColumn<Equipos, String> tblEquipo;
     @FXML private TableColumn<Equipos, String> txtID;
@@ -32,16 +31,12 @@ public class Controller_TablaGeneral {
     @FXML private TableColumn<Equipos, Number> txtGolesAFavor;
     @FXML private TableColumn<Equipos, Number> tabGolesContra;
     @FXML private TextField txfBuscarTablaPremier;
-    DataGestorLiga  gestionliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
-    LogicLigas  log = new LogicLigas(gestionliga);
-    @FXML
-    public void initialize() {
-        try{
-            gestionliga.getLigas().setAll(log.cargarligas());
-            gestionliga.actualizarContadorId();
-        }catch (Exception e){
-            mostrarErrores("Error al inicializar la escena", e);
-        }
+
+    private final Path rutaLigas = Path.of("Data/ligas.xml");
+    DataGestorLiga gestionliga = DataGestorLiga.getInstance(rutaLigas);
+    LogicLigas log = new LogicLigas(gestionliga);
+
+    private void configurarTabla() {
         txtID.setCellValueFactory(data -> data.getValue().idEquipoProperty());
         tblEquipo.setCellValueFactory(data -> data.getValue().nombreEquipoProperty());
         txtGanados.setCellValueFactory(data -> data.getValue().ganadosProperty());
@@ -50,90 +45,83 @@ public class Controller_TablaGeneral {
         txtGolesAFavor.setCellValueFactory(data -> data.getValue().golesFavorProperty());
         tabGolesContra.setCellValueFactory(data -> data.getValue().golesContraProperty());
         tblPos.setCellValueFactory(data -> data.getValue().puntosProperty());
-        try {
-            DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().forEach(liga -> {
-                ligacombo.getItems().add(liga.nombreLigaProperty().get());
-            });
-        } catch (Exception e) {
-            mostrarErrores("Error al cargar ligas", e);
-        }
-
-        tblLista.setItems(DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getEquiposFiltrados());
-        cargar();
-
-
-
-        // Configurar el ordenamiento de la tabla
-        tblPos.setSortType(TableColumn.SortType.DESCENDING);
-        txtGolesAFavor.setSortType(TableColumn.SortType.DESCENDING);
-        tblLista.getSortOrder().setAll(tblPos, txtGolesAFavor);
     }
 
-    private void cargar() {
+    @FXML
+    public void initialize() {
+        configurarTabla();
+
         try {
+            // 1. Cargar Ligas
             gestionliga.getLigas().setAll(log.cargarligas());
-            gestionliga.actualizarContadorId();
+
+            // 2. Rellenar ComboBox
+            ligacombo.getItems().clear();
+            for (LigaDTO liga : gestionliga.getLigas()) {
+                ligacombo.getItems().add(liga.nombreLigaProperty().get());
+            }
+
+            // 3. Listener para filtrar la tabla al cambiar de liga
+            ligacombo.getSelectionModel().selectedItemProperty().addListener((obs, anterior, nuevoNombre) -> {
+                if (nuevoNombre != null) {
+                    LigaDTO seleccionada = gestionliga.getLigas().stream()
+                            .filter(l -> l.nombreLigaProperty().get().equals(nuevoNombre))
+                            .findFirst().orElse(null);
+
+                    if (seleccionada != null) {
+                        gestionliga.filtrarPorLiga(seleccionada);
+                        tblLista.sort();
+                    }
+                }
+            });
+
+            // 4. Seleccionar la primera por defecto
+            if (!ligacombo.getItems().isEmpty()) {
+                ligacombo.getSelectionModel().selectFirst();
+            }
+
         } catch (Exception e) {
-            mostrarErrores("Error al cargar equipos", e);
+            mostrarErrores("Error al inicializar la tabla general", e);
+        }
+
+        tblLista.setItems(gestionliga.getEquiposFiltrados());
+
+        // Ordenamiento por defecto (Puntos y Goles)
+        tblPos.setSortType(TableColumn.SortType.DESCENDING);
+        tblLista.getSortOrder().add(tblPos);
+
+        if (!ligacombo.getItems().isEmpty()) {
+            ligacombo.getSelectionModel().selectFirst();
         }
     }
-
-
 
     @FXML
     void buscar(ActionEvent event) {
-            String ligaSeleccionada = ligacombo.getSelectionModel().getSelectedItem();
+        String ligaSeleccionada = ligacombo.getSelectionModel().getSelectedItem();
+        if (ligaSeleccionada == null || ligaSeleccionada.isEmpty()) return;
 
-            if (ligaSeleccionada == null || ligaSeleccionada.isEmpty()) {
-                tblLista.setItems(DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getEquiposFiltrados());
-                return;
-            }
-
-            try {
-                ObservableList<Equipos> equiposLiga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getEquiposPorLiga(ligaSeleccionada);
-
-                tblLista.setItems(equiposLiga);
-                tblLista.getSortOrder().setAll(tblPos, txtGolesAFavor);
-                tblLista.sort();
-
-            } catch (Exception e) {
-                mostrarErrores("Error al filtrar equipos", e);
-            }
-
-    }
-
-
-    @FXML
-    void CreacionEquiposcene(ActionEvent event) {
-        cambiarEscena(event, "creacion_equipos.fxml");
+        try {
+            ObservableList<Equipos> equiposLiga = gestionliga.getEquiposPorLiga(ligaSeleccionada);
+            tblLista.setItems(equiposLiga);
+            tblLista.sort();
+        } catch (Exception e) {
+            mostrarErrores("Error al filtrar equipos", e);
+        }
     }
 
     @FXML
-    void CreacionLigascene(ActionEvent event) {
-        cambiarEscena(event, "Creacion_liga.fxml");
+    void filtrarequipos(ActionEvent event) {
+        buscar(event); // Redirige la acción al método buscar que ya existe
     }
 
-    @FXML
-    void ModificacionEquiposcene(ActionEvent event) {
-        cambiarEscena(event,"modificacion_equipo.fxml");
+    // --- Navegación ---
 
-    }
-
-    @FXML
-    void TablaposicionesScenes(ActionEvent event) {
-        cambiarEscena(event, "Creacion_partidos.fxml");
-
-    }
-    @FXML
-    void registratResultadoScene(ActionEvent event) {
-        cambiarEscena(event, "registrar_resultados.fxml");
-
-    }
-    @FXML
-    void tablapartido(ActionEvent event) {
-        cambiarEscena(event,"Tablapartidos.fxml");
-
-    }
+    @FXML void CreacionEquiposcene(ActionEvent event) { cambiarEscena(event, "creacion_equipos.fxml"); }
+    @FXML void CreacionLigascene(ActionEvent event) { cambiarEscena(event, "Creacion_liga.fxml"); }
+    @FXML void ModificacionEquiposcene(ActionEvent event) { cambiarEscena(event, "modificacion_equipo.fxml"); }
+    @FXML void TablaposicionesScenes(ActionEvent event) { cambiarEscena(event, "Creacion_partidos.fxml"); }
+    @FXML void registratResultadoScene(ActionEvent event) { cambiarEscena(event, "registrar_resultados.fxml"); }
+    @FXML void tablapartido(ActionEvent event) { cambiarEscena(event, "Tablapartidos.fxml"); }
 
     private void cambiarEscena(ActionEvent event, String fxmlFile) {
         try {
@@ -144,54 +132,12 @@ public class Controller_TablaGeneral {
             e.printStackTrace();
         }
     }
-    @FXML
-    void filtrarequipos(ActionEvent event) {
-        String ligaSeleccionada = ligacombo.getSelectionModel().getSelectedItem();
-        if (ligaSeleccionada == null || ligaSeleccionada.isEmpty()) {
-            tblLista.setItems(null);
-            return;
-        }
-        try {
-            ObservableList<Equipos> equiposLiga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getEquiposPorLiga(ligaSeleccionada);
-            tblLista.setItems(equiposLiga);
-            tblLista.getSortOrder().setAll(tblPos, txtGolesAFavor);
-            tblLista.sort();
-        } catch (Exception e) {
-            mostrarErrores("Error al filtrar equipos", e);
-        }
 
-    }
-    //para manejar las ventanas de errores
-    private void mostrarErrores(String titulo, Exception e){
-        //ventana de error
+    private void mostrarErrores(String titulo, Exception e) {
         Alert alerta = new Alert(Alert.AlertType.ERROR);
         alerta.setTitle(titulo);
-        alerta.setHeaderText("Ocurrio un problema...");
-        alerta.setContentText(e.getMessage() != null ? e.getMessage() : "Error inesperado...");
-        TextArea detalle = new TextArea();
-        detalle.setEditable(false);
-        detalle.setWrapText(true);
-
-        //detalle del error
-        StringBuilder sb = new StringBuilder();
-        sb.append(e.toString()).append("\n\n");
-        for(StackTraceElement ste : e.getStackTrace()){
-            sb.append("en: ").append(ste.toString()).append("\n");
-        }
-
-        //muestra el detalle del error
-        detalle.setText(sb.toString());
-        TitledPane tb = new TitledPane("Detalle tecnico", detalle);
-        tb.setExpanded(false);
-
-        VBox contenido = new VBox(10, new Label("Se encotro un error, verifique el detalle..."), tb);
-        contenido.setMaxWidth(Double.MAX_VALUE);
-
-        //mostrar alerta
-        alerta.getDialogPane().setExpandableContent(contenido);
-        alerta.getDialogPane().setExpanded(false);
-
+        alerta.setHeaderText("Ocurrió un problema...");
+        alerta.setContentText(e.getMessage());
         alerta.showAndWait();
     }
-
 }

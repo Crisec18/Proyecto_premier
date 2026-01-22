@@ -14,6 +14,7 @@ public class LigaDTO {
     StringProperty region;
     ObservableList<Equipos> equipos;
     ObservableList<PartidosDTO> partidos;
+    ObservableList<String> jornada;
     int ligatamano;
     //linkedlist de partidos
     public LigaDTO(String id, String nombre, String region){
@@ -22,12 +23,14 @@ public class LigaDTO {
         this.region = new SimpleStringProperty(region);
         equipos = FXCollections.observableArrayList();
         partidos = FXCollections.observableArrayList();
+        jornada = FXCollections.observableArrayList();
 
     }
     public ObservableList<Equipos> getequipos(){
         return equipos;
     }
     public ObservableList<PartidosDTO> getpartidos(){return partidos;}
+    public ObservableList<String> getjornadas(){return jornada;}
 
     public StringProperty idLigaProperty(){
         return id;

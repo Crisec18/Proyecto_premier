@@ -194,8 +194,6 @@ public class DataGestorLiga {
                 .orElse(null);
     }
 
-
-
     public List<LigaDTO> cargar() throws Exception {
         if (!Files.exists(RutaligasXML)) {
             //si no hay, retornar lista vacia
@@ -330,6 +328,14 @@ public class DataGestorLiga {
             return Integer.parseInt(s.trim());
         } catch (Exception ex) {
             return def;
+        }
+    }
+
+    public void filtrarPorLiga(LigaDTO ligaSeleccionada) {
+        if (ligaSeleccionada == null) {
+            ligasfiltradas.setPredicate(liga -> true);
+        } else {
+            ligasfiltradas.setPredicate(liga -> liga.equals(ligaSeleccionada));
         }
     }
 }

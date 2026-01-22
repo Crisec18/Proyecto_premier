@@ -72,6 +72,32 @@ public class DataPartidos {
                 .findFirst()
                 .orElse(null);
     }
+//Para los contadores de partidos------------------------------------------------------------
+    //contador de equipos
+    public int totalEquipos(){
+        return DataEquipos.getInstance(null).getEquipos().size();
+    }
+
+    public boolean contadorJornadasFinalizadas(String jornada){
+        List<PartidosDTO> partidosJornada = partidos.stream()
+                .filter(p -> p.jornadasProperty().get().equals(jornada)).toList();
+
+        if(partidosJornada.isEmpty()){
+            return false;
+        }
+        else {
+            return  partidosJornada.stream().allMatch(p -> p.estadoProperty().get().equals("Finalizado"));
+        }
+    }
+
+    public int contarPartidosPorEstado(String estado) {
+        return partidos.stream().filter(p -> p.estadoProperty().get().equals(estado)).toList().size();
+    }
+    //para los partidos que tienen estado pendiente en una jornada dada
+    public boolean estaJornadaEsSimulable(String nombreJornada) {
+        return partidos.stream().anyMatch(p -> p.getJornadas().get().equals(nombreJornada) &&
+                        p.estadoProperty().get().equalsIgnoreCase("Pendiente"));
+    }
 
     private Equipos buscarEquipoPorId(DataEquipos dataEquipos, String id) {
         return dataEquipos.getEquipos().stream()
@@ -93,7 +119,6 @@ public class DataPartidos {
         }
         idcounter.set(maxId + 1);
     }
-
 
     public List<PartidosDTO> cargar() throws Exception {
         if (!Files.exists(RutapartidosXML)) {

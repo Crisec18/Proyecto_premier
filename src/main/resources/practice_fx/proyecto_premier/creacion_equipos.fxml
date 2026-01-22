@@ -124,6 +124,8 @@
                   <Font name="System Italic" size="12.0" />
                </font>
             </Button>
+            <Label layoutX="419.0" layoutY="64.0" text="Equipos:" textFill="WHITE" />
+            <Label fx:id="lblRegistrados" layoutX="478.0" layoutY="64.0" text="0" textFill="WHITE" />
       </children>
     </AnchorPane>
   </children>

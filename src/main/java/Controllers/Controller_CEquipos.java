@@ -56,6 +56,10 @@ public class Controller_CEquipos {
     @FXML
     private DatePicker fechacreacion;
 
+    @FXML
+    private Label lblRegistrados;
+
+
     private final DataEquipos datosEquipos = DataEquipos.getInstance(null);
     private final LogicaEquipo loq = new LogicaEquipo(datosEquipos);;
     private final DataGestorLiga datosliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
@@ -73,9 +77,14 @@ public class Controller_CEquipos {
                 )
         );
         //se estaba dejando votado el annioDeFundacion
-
+        actualizarContador();
         TableTeams.setItems(datosEquipos.getEquipos());
         cargar();
+    }
+
+    private void actualizarContador() {
+        int total = DataEquipos.getInstance(null).getEquipos().size();
+        lblRegistrados.setText("Equipos Registrados: " + total);
     }
 
 //aplicar lo de los errores

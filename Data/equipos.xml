@@ -6,12 +6,12 @@
     <estadioEquipo>asdadad</estadioEquipo>
     <ciudadEquipo>dwadad</ciudadEquipo>
     <annioFundacion>2026-01-21</annioFundacion>
-    <puntos>0</puntos>
-    <partidosGanados>0</partidosGanados>
+    <puntos>3</puntos>
+    <partidosGanados>1</partidosGanados>
     <partidosEmpatados>0</partidosEmpatados>
     <partidosPerdidos>1</partidosPerdidos>
-    <golesAFavor>2</golesAFavor>
-    <golesEnContra>3</golesEnContra>
+    <golesAFavor>5</golesAFavor>
+    <golesEnContra>5</golesEnContra>
     <partidosJugados>3</partidosJugados>
   </equipo>
   <equipo>
@@ -23,9 +23,9 @@
     <puntos>3</puntos>
     <partidosGanados>1</partidosGanados>
     <partidosEmpatados>0</partidosEmpatados>
-    <partidosPerdidos>0</partidosPerdidos>
-    <golesAFavor>3</golesAFavor>
-    <golesEnContra>2</golesEnContra>
+    <partidosPerdidos>1</partidosPerdidos>
+    <golesAFavor>5</golesAFavor>
+    <golesEnContra>5</golesEnContra>
     <partidosJugados>3</partidosJugados>
   </equipo>
   <equipo>
@@ -34,12 +34,12 @@
     <estadioEquipo>sdadas</estadioEquipo>
     <ciudadEquipo>dadad</ciudadEquipo>
     <annioFundacion>2026-01-22</annioFundacion>
-    <puntos>0</puntos>
+    <puntos>1</puntos>
     <partidosGanados>0</partidosGanados>
     <partidosEmpatados>0</partidosEmpatados>
     <partidosPerdidos>0</partidosPerdidos>
-    <golesAFavor>0</golesAFavor>
-    <golesEnContra>0</golesEnContra>
+    <golesAFavor>5</golesAFavor>
+    <golesEnContra>5</golesEnContra>
     <partidosJugados>1</partidosJugados>
   </equipo>
   <equipo>
@@ -48,12 +48,12 @@
     <estadioEquipo>asdada</estadioEquipo>
     <ciudadEquipo>dsadada</ciudadEquipo>
     <annioFundacion>2026-01-21</annioFundacion>
-    <puntos>0</puntos>
+    <puntos>1</puntos>
     <partidosGanados>0</partidosGanados>
     <partidosEmpatados>0</partidosEmpatados>
     <partidosPerdidos>0</partidosPerdidos>
-    <golesAFavor>0</golesAFavor>
-    <golesEnContra>0</golesEnContra>
+    <golesAFavor>5</golesAFavor>
+    <golesEnContra>5</golesEnContra>
     <partidosJugados>1</partidosJugados>
   </equipo>
   <equipo>

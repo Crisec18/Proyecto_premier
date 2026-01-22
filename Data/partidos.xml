@@ -29,7 +29,7 @@
     <estadio>asdada</estadio>
     <fecha>2026-01-21</fecha>
     <liga>europea</liga>
-    <estado>Pendiente</estado>
+    <estado>Finalizado</estado>
     <idEquipoLocal>4</idEquipoLocal>
     <idEquipoVisitante>3</idEquipoVisitante>
   </partido>
@@ -40,7 +40,7 @@
     <estadio>asdadad</estadio>
     <fecha>2026-01-21</fecha>
     <liga>europea</liga>
-    <estado>Pendiente</estado>
+    <estado>Finalizado</estado>
     <idEquipoLocal>1</idEquipoLocal>
     <idEquipoVisitante>2</idEquipoVisitante>
   </partido>

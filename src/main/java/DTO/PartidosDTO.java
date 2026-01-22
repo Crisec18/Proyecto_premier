@@ -105,4 +105,6 @@ public class PartidosDTO {
     public LocalDate fechaproperty() {
         return fecha;
     }
+
+
 }
