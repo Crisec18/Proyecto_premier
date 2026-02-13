@@ -65,7 +65,7 @@ public class SimulationTask implements Callable<PartidosDTO> {
                         up.executeUpdate();
                     }
 
-                    // Actualizar estadísticas de equipos
+                    // actualizar estadísticas de equipos
                     Equipos local = null;
                     Equipos visitante = null;
                     try (PreparedStatement psEq = conn.prepareStatement("SELECT id, nombre, partidos_jugados, partidos_ganados, partidos_perdidos, goles_a_favor, goles_en_contra, puntos, goles_empatados FROM Equipo WHERE id = ?")) {
@@ -105,7 +105,7 @@ public class SimulationTask implements Callable<PartidosDTO> {
                         return null;
                     }
 
-                    // Ajustar contadores
+                    // ajustar contadores
                     local.setPartidosjugados(local.jugadosProperty().get() + 1);
                     visitante.setPartidosjugados(visitante.jugadosProperty().get() + 1);
 
@@ -157,7 +157,7 @@ public class SimulationTask implements Callable<PartidosDTO> {
 
                     conn.commit();
 
-                    // Construir DTO resultado (leer de BD sería otra opción)
+                    // Construir DTO resultado
                     PartidosDTO dto = new PartidosDTO();
                     dto.setIdPartido(partidoId);
                     dto.setFecha(fecha);
