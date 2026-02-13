@@ -4,8 +4,8 @@
     <idPartido>1</idPartido>
     <nombrePartido>equipo1 vs equipo2</nombrePartido>
     <jornada>Jornada 1</jornada>
-    <estadio>asdadad</estadio>
-    <fecha>2026-01-20</fecha>
+    <estadio>asdada</estadio>
+    <fecha>2026-01-22</fecha>
     <liga>europea</liga>
     <estado>Finalizado</estado>
     <idEquipoLocal>1</idEquipoLocal>
@@ -13,35 +13,24 @@
   </partido>
   <partido>
     <idPartido>2</idPartido>
-    <nombrePartido>equipo1 vs equipo2</nombrePartido>
-    <jornada>Jornada 1</jornada>
-    <estadio>sdadadad</estadio>
-    <fecha>2026-01-21</fecha>
-    <liga>latina</liga>
-    <estado>Pendiente</estado>
-    <idEquipoLocal>1</idEquipoLocal>
-    <idEquipoVisitante>2</idEquipoVisitante>
-  </partido>
-  <partido>
-    <idPartido>3</idPartido>
-    <nombrePartido>equipo4 vs equipo3</nombrePartido>
-    <jornada>Jornada 1</jornada>
+    <nombrePartido>equipo1 vs equipo3</nombrePartido>
+    <jornada>Jornada 3</jornada>
     <estadio>asdada</estadio>
-    <fecha>2026-01-21</fecha>
+    <fecha>2026-01-22</fecha>
     <liga>europea</liga>
     <estado>Finalizado</estado>
-    <idEquipoLocal>4</idEquipoLocal>
+    <idEquipoLocal>1</idEquipoLocal>
     <idEquipoVisitante>3</idEquipoVisitante>
   </partido>
   <partido>
-    <idPartido>4</idPartido>
-    <nombrePartido>equipo1 vs equipo2</nombrePartido>
-    <jornada>Jornada 2</jornada>
-    <estadio>asdadad</estadio>
-    <fecha>2026-01-21</fecha>
+    <idPartido>3</idPartido>
+    <nombrePartido>equipo2 vs equipo3</nombrePartido>
+    <jornada>Jornada 3</jornada>
+    <estadio>asdada</estadio>
+    <fecha>2026-01-22</fecha>
     <liga>europea</liga>
     <estado>Finalizado</estado>
-    <idEquipoLocal>1</idEquipoLocal>
-    <idEquipoVisitante>2</idEquipoVisitante>
+    <idEquipoLocal>2</idEquipoLocal>
+    <idEquipoVisitante>3</idEquipoVisitante>
   </partido>
 </partidos>

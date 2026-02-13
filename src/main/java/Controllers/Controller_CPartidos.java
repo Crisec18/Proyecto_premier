@@ -13,6 +13,8 @@ import Data.DataPartidos;
 import Logic.LogicLigas;
 import Logic.LogicPartidos;
 import Logic.LogicaEquipo;
+import client.PartidosServiceClientSocket;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -100,18 +102,18 @@ public class Controller_CPartidos {
     @FXML
     private Label visitlabel;
 
-    private final DataPartidos datosPartidos= DataPartidos.getInstance(Path.of("Data/partidos.xml"));
+    private final DataPartidos datosPartidos= DataPartidos.getInstance();
     private final LogicPartidos loq = new LogicPartidos(datosPartidos);
-    private final DataEquipos dataEquipos = DataEquipos.getInstance(Path.of("Data/equipos.xml"));
+    private final DataEquipos dataEquipos = DataEquipos.getInstance();
     private final LogicaEquipo logicaEquipo = new LogicaEquipo(dataEquipos);
-    private final DataGestorLiga dataGestorLiga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+    private final DataGestorLiga dataGestorLiga = DataGestorLiga.getInstance();
     private final LogicLigas loqligas = new LogicLigas(dataGestorLiga);
 
     @FXML
     void buscar(ActionEvent event) {
         String busquedatxt = buscartextfield.getText().toLowerCase();
         try{
-            DataEquipos.getInstance(Path.of("Data/ligas.xml")).getEquiposfiltrados().setPredicate(p->{
+            DataEquipos.getInstance().getEquiposfiltrados().setPredicate(p->{
                 if(busquedatxt.isEmpty()) return true;
                 return (p.idEquipoProperty().get().toLowerCase().contains(busquedatxt) || p.nombreEquipoProperty().get().toLowerCase().contains(busquedatxt)
                         || p.ciudadEquipoProperty().get().toLowerCase().contains(busquedatxt));
@@ -128,7 +130,7 @@ public class Controller_CPartidos {
     void buscarvisitante(ActionEvent event) {
         String busquedatxt = bsucartxtfieldvisit.getText().toLowerCase();
         try{
-            DataEquipos.getInstance(null).getFiltradovisitante().setPredicate(p->{
+            DataEquipos.getInstance().getFiltradovisitante().setPredicate(p->{
                 if(busquedatxt.isEmpty()) return true;
                 return (p.idEquipoProperty().get().toLowerCase().contains(busquedatxt) || p.nombreEquipoProperty().get().toLowerCase().contains(busquedatxt)
                         || p.ciudadEquipoProperty().get().toLowerCase().contains(busquedatxt));
@@ -176,6 +178,11 @@ public class Controller_CPartidos {
                 return;
             }
             String nombreLiga = Ligacombo.getSelectionModel().getSelectedItem();
+
+            LigaDTO liga1 = DataGestorLiga.getInstance().getLigas().stream()
+                    .filter(l -> l.nombreLigaProperty().get().equals(nombreLiga))
+                    .findFirst()
+                    .orElse(null);
             String jornada = jornadacombo.getSelectionModel().getSelectedItem();
             boolean localYaEnLiga = dataGestorLiga.equipoYaEnLiga(local, nombreLiga);
             boolean visitanteYaEnLiga = dataGestorLiga.equipoYaEnLiga(visitante, nombreLiga);
@@ -202,10 +209,6 @@ public class Controller_CPartidos {
                 mostrarErrores("Error de ligas", new Exception("Liga llena (Espacio para partidos limitado)"));
                 return;
             }
-            LigaDTO liga1 = DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().stream()
-                    .filter(l -> l.nombreLigaProperty().get().equals(nombreLiga))
-                    .findFirst()
-                    .orElse(null);
             if(liga1.getLigatamano() >= 10){
                 mostrarErrores("Error de liga", new Exception("Liga llena"));
                 return;
@@ -225,6 +228,7 @@ public class Controller_CPartidos {
                     return;
                 }
             }
+            int idLiga = Integer.parseInt(liga1.idLigaProperty().get());
 
             String partidonombre = local.nombreEquipoProperty().get() + " vs " + visitante.nombreEquipoProperty().get();
             boolean partidoDuplicado = datosPartidos.getPartidos().stream()
@@ -232,7 +236,7 @@ public class Controller_CPartidos {
                             p.getlocal().idEquipoProperty().get().equals(local.idEquipoProperty().get()) &&
                                     p.getvisitante().idEquipoProperty().get().equals(visitante.idEquipoProperty().get()) &&
                                     p.getJornadas().get().equals(jornada) &&
-                                    p.getliga().get().equals(nombreLiga)
+                                    p.getliga().get() ==  idLiga
                     );
             if (partidoDuplicado) {
                 mostrarErrores("Partido duplicado", new Exception("Ya existe un partido entre estos equipos en la misma jornada y liga"));
@@ -247,12 +251,11 @@ public class Controller_CPartidos {
                     estadiocombo.getSelectionModel().getSelectedItem(),
                     fechapicker.getValue());
 
-
-            nuevoPartido.setliga(nombreLiga);
+            nuevoPartido.setliga(idLiga);
             nuevoPartido.getlocal().setPartidosjugados(nuevoPartido.getlocal().jugadosProperty().get() + 1);
             nuevoPartido.getvisitante().setPartidosjugados(nuevoPartido.getvisitante().jugadosProperty().get() + 1);
 
-            for (LigaDTO liga : DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas()) {
+            for (LigaDTO liga : DataGestorLiga.getInstance().getLigas()) {
                 if (liga.nombreLigaProperty().get().equals(nombreLiga)) {
 
                     if (!liga.getequipos().contains(local)) {
@@ -268,15 +271,25 @@ public class Controller_CPartidos {
                     break;
                 }
             }
-                try {
-                    loq.guardar(datosPartidos.getPartidos());
-                    logicaEquipo.guardar(dataEquipos.getEquipos());
-
-                } catch (Exception e) {
-                    mostrarErrores("Error al guardar partidos en XML", e);
+            javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    loq.guardarPartido(nuevoPartido, idLiga);
+                    logicaEquipo.actualizarEstadisticas(nuevoPartido.getlocal());
+                    logicaEquipo.actualizarEstadisticas(nuevoPartido.getvisitante());
+                    return null;
                 }
+            };
 
-            limpiarformulario();
+            task.setOnSucceeded(e -> {
+                limpiarformulario();
+            });
+
+            task.setOnFailed(e -> {
+                mostrarErrores("Error al guardar partido (remoto)", new Exception(task.getException()));
+            });
+
+            new Thread(task).start();
         }catch (Exception e){
             mostrarErrores("Error al guardar el partido", new Exception(validarformulario()) );
         }
@@ -291,46 +304,59 @@ public class Controller_CPartidos {
         visitantename.setText("Equipo#2");
         estadiocombo.getSelectionModel().clearSelection();
         jornadacombo.getSelectionModel().clearSelection();
-        Ligacombo.getSelectionModel().clearSelection();
         fechapicker.setValue(null);
     }
     @FXML
     void initialize() {
-        try{
-            dataGestorLiga.getLigas().setAll(loqligas.cargarligas());
-            dataGestorLiga.actualizarContadorId();
-        }catch (Exception e){
-            mostrarErrores("Error al inicializar la escena", e);
-        }
 
         // Configurar columnas de tabla de equipos locales
         Colid.setCellValueFactory(data -> data.getValue().idEquipoProperty());
         ColName.setCellValueFactory(data -> data.getValue().nombreEquipoProperty());
         Colidvisit.setCellValueFactory(data -> data.getValue().idEquipoProperty());
         Colnombrevisit.setCellValueFactory(data -> data.getValue().nombreEquipoProperty());
-        
-        // Asignar datos a las tablas
-        TableTeams.setItems(DataEquipos.getInstance(Path.of("Data/equipos.xml")).getEquiposfiltrados());
-        TableVisitante.setItems(DataEquipos.getInstance(Path.of("Data/equipos.xml")).getFiltradovisitante());
-        try {
-            datosPartidos.getPartidos().setAll(loq.cargarpartidos());
-            datosPartidos.actualizarContadorId();
-        } catch (Exception e) {
-            mostrarErrores("Error al cargar partidos", e);
-        }
+        TableTeams.setItems(DataEquipos.getInstance().getEquiposfiltrados());
+        TableVisitante.setItems(DataEquipos.getInstance().getFiltradovisitante());
+        cargarDatosIniciales();
 
+    }
+
+    private void cargarDatosIniciales() {
+        javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                dataGestorLiga.getLigas().setAll(loqligas.cargarligas());
+                datosPartidos.getPartidos().setAll(loq.cargarpartidos());
+                datosPartidos.actualizarContadorId();
+                return null;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            actualizarCombos();
+        });
+
+        task.setOnFailed(e -> {
+            mostrarErrores("Error al cargar datos iniciales", new Exception(task.getException()));
+        });
+
+        new Thread(task).start();
+    }
+
+    private void actualizarCombos() {
+        Ligacombo.getItems().clear();
+        for (LigaDTO liga : dataGestorLiga.getLigas()) {
+            Ligacombo.getItems().add(liga.nombreLigaProperty().get());
+        }
+        jornadacombo.getItems().clear();
         for (int i = 1; i <= 3; i++) {
             jornadacombo.getItems().add("Jornada " + i);
         }
-
-        try {
-            for (LigaDTO liga : dataGestorLiga.getLigas()) {
-                Ligacombo.getItems().add(liga.nombreLigaProperty().get());
+        estadiocombo.getItems().clear();
+        for (Equipos equipo : DataEquipos.getInstance().getEquipos()) {
+            if (!estadiocombo.getItems().contains(equipo.getEstadio())) {
+                estadiocombo.getItems().add(equipo.getEstadio());
             }
-        } catch (Exception e) {
-            mostrarErrores("Error al cargar ligas", e);
         }
-
     }
 
     private String validarformulario(){
@@ -349,7 +375,7 @@ public class Controller_CPartidos {
         if(TableVisitante.getSelectionModel().getSelectedItem() == null){
             return "Equipo visitante no seleccionado";
         }
-        if(DataEquipos.getInstance(null).getEquipos().isEmpty()){
+        if(DataEquipos.getInstance().getEquipos().isEmpty()){
             return "No hay equipos registrados";
         }
         if (estadiocombo.getSelectionModel().getSelectedItem() == null) {
@@ -393,51 +419,9 @@ public class Controller_CPartidos {
             }
         }
     }
-    private LigaDTO buscarLigaPorNombre(String nombreLiga) {
-        return DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().stream()
-                .filter(l -> l.nombreLigaProperty().get().equals(nombreLiga))
-                .findFirst()
-                .orElse(null);
-    }
 
-    private boolean existePartidoDuplicado(Equipos local, Equipos visitante, String jornada, String nombreLiga) {
-        return DataPartidos.getInstance(Path.of("Data/partidos.xml")).getPartidos().stream()
-                .anyMatch(p ->
-                        p.getlocal().idEquipoProperty().get().equals(local.idEquipoProperty().get()) &&
-                                p.getvisitante().idEquipoProperty().get().equals(visitante.idEquipoProperty().get()) &&
-                                p.getJornadas().get().equals(jornada) &&
-                                p.getliga().get().equals(nombreLiga)
-                );
-    }
 
-    private void crearYAsociarPartido(String partidonombre, Equipos local, Equipos visitante, String jornada, String nombreLiga) {
-        DataPartidos.getInstance(null).agregarPartido(
-                partidonombre,
-                local,
-                visitante,
-                jornada,
-                estadiocombo.getSelectionModel().getSelectedItem(),
-                fechapicker.getValue()
-        );
-        PartidosDTO nuevoPartido = DataPartidos.getInstance(null).getPartidoPorNombre(partidonombre);
-        nuevoPartido.setliga(nombreLiga);
-        nuevoPartido.getlocal().setPartidosjugados(nuevoPartido.getlocal().jugadosProperty().get() + 1);
-        nuevoPartido.getvisitante().setPartidosjugados(nuevoPartido.getvisitante().jugadosProperty().get() + 1);
 
-        for (LigaDTO liga : DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas()) {
-            if (liga.nombreLigaProperty().get().equals(nombreLiga)) {
-                if (!liga.getequipos().contains(local)) {
-                    liga.getequipos().add(local);
-                }
-                if (!liga.getequipos().contains(visitante)) {
-                    liga.getequipos().add(visitante);
-                }
-                liga.getpartidos().add(nuevoPartido);
-                liga.aumentarcapacidadliga();
-                break;
-            }
-        }
-    }
 
     @FXML
     void obtenerlocal(MouseEvent event) {
@@ -488,6 +472,48 @@ public class Controller_CPartidos {
     void tablapartidosscene(ActionEvent event) {
         cambiarEscena(event, "Tablapartidos.fxml");
 
+    }
+
+    /**
+     * Handler para simular todos los partidos pendientes/no jugados.
+     * Esta operación se ejecuta en un hilo de fondo para no bloquear la UI.
+     */
+    @FXML
+    void simularTodos(ActionEvent event) {
+        // Ejecutar en background
+        javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                // Ajusta host/puerto si tu servidor está en otra parte
+                try (PartidosServiceClientSocket client = new PartidosServiceClientSocket("localhost", 5050)) {
+                    // Usamos la variante síncrona con timeout de 60s en el hilo de fondo
+                    int simulados = client.simularTodosSync(60);
+                    // Recargar partidos desde la BD usando la lógica existente
+                    var partidos = loq.cargarpartidos();
+                    Platform.runLater(() -> {
+                        datosPartidos.getPartidos().setAll(partidos);
+                        actualizarCombos();
+                        Alert a = new Alert(Alert.AlertType.INFORMATION);
+                        a.setTitle("Simulación completada");
+                        a.setHeaderText("Simulación terminada");
+                        a.setContentText("Se simularon " + simulados + " partidos.");
+                        a.showAndWait();
+                    });
+                } catch (IOException ioe) {
+                    Platform.runLater(() -> mostrarErrores("Error de conexión al servidor", ioe));
+                } catch (Exception ex) {
+                    Platform.runLater(() -> mostrarErrores("Error durante la simulación", new Exception(ex)));
+                }
+                return null;
+            }
+        };
+
+        task.setOnFailed(e -> {
+            Throwable ex = task.getException();
+            Platform.runLater(() -> mostrarErrores("Error en simulación", new Exception(ex)));
+        });
+
+        new Thread(task).start();
     }
 
     private void cambiarEscena(ActionEvent event, String fxmlFile) {

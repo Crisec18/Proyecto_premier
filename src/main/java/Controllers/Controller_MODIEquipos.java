@@ -56,41 +56,71 @@ public class Controller_MODIEquipos {
     @FXML
     private Label lblContadorModificar;
 
-    private final DataEquipos datosEquipos = DataEquipos.getInstance(null);
+    private final DataEquipos datosEquipos = DataEquipos.getInstance();
     private final LogicaEquipo loq = new LogicaEquipo(datosEquipos);
-    private final DataGestorLiga datosliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+    private final DataGestorLiga datosliga = DataGestorLiga.getInstance();
     private final LogicLigas logicaLiga = new LogicLigas(datosliga);
 
     private void actualizarContador() {
-        int total = DataEquipos.getInstance(null).getEquipos().size();
+        int total = DataEquipos.getInstance().getEquipos().size();
         lblContadorModificar.setText("Equipos Registrados: " + total);
     }
 
+    private void cargar(){
+        javafx.concurrent.Task<java.util.List<Equipos>> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected java.util.List<Equipos> call() throws Exception {
+                return loq.cargarEquipos();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            datosEquipos.getEquipos().setAll(task.getValue());
+            actualizarContador();
+        });
+
+        task.setOnFailed(e -> mostrarErrores("Error al cargar equipos (remoto)", new Exception(task.getException())));
+
+        new Thread(task).start();
+    }
 
     @FXML
     void actualizar(ActionEvent event) {
-        try {
-            Equipos seleccionado = TableTeams.getSelectionModel().getSelectedItem();
-            if (seleccionado == null) {
-                mostrarErrores("Error de validadcion", new Exception(validarformulario()));
-                return;
+        Equipos seleccionado = TableTeams.getSelectionModel().getSelectedItem();
+        if (seleccionado == null) {
+            mostrarErrores("Error de validacion", new Exception("No hay equipo seleccionado"));
+            return;
+        }
+        if(datosliga.equipoTienePartidos(seleccionado)){
+            mostrarErrores("Error de validacion", new Exception("Error de modificación: Equipo asignado a alguna liga"));
+            return;
+        }
+        if (validarformulario() != null) {
+            mostrarErrores("Error de validacion", new Exception(validarformulario()));
+            return;
+        }
+
+        seleccionado.setNombre(Nombretxt.getText());
+        seleccionado.setEstadio(estadiotxt.getText());
+        seleccionado.setCiudad(ciudadtxt.getText());
+
+        javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                loq.actualizar(seleccionado);
+                return null;
             }
-            if(datosliga.equipoTienePartidos(seleccionado)){
-                mostrarErrores("Error de validadacion", new Exception("error de modificacion Equipo asignado a alguna liga"));
-                return;
-            }
-            if (validarformulario() != null) {
-                mostrarErrores("Error de validacion",new Exception(validarformulario()) );
-                return;
-            }
-            seleccionado.setNombre(Nombretxt.getText());
-            seleccionado.setEstadio(estadiotxt.getText());
-            seleccionado.setCiudad(ciudadtxt.getText());
+        };
+
+        task.setOnSucceeded(e -> {
+            cargar();
             TableTeams.refresh();
             limpiarformulario();
-        } catch (Exception e) {
-            mostrarErrores("Se produjo un error al actualizar...", e);
-        }
+        });
+
+        task.setOnFailed(e -> mostrarErrores("Error al actualizar (remoto)", new Exception(task.getException())));
+
+        new Thread(task).start();
 
     }
     @FXML
@@ -100,25 +130,41 @@ public class Controller_MODIEquipos {
         ColName.setCellValueFactory(data->data.getValue().nombreEquipoProperty());
         ColEstadio.setCellValueFactory(data->data.getValue().estadioEquipoProperty());
         Colciudad.setCellValueFactory(data->data.getValue().ciudadEquipoProperty());
-        TableTeams.setItems(DataEquipos.getInstance(null).getEquiposfiltrados());
+        TableTeams.setItems(DataEquipos.getInstance().getEquiposfiltrados());
         actualizarContador();
+        cargar();
     }
 
     @FXML
     void eliminar(ActionEvent event) throws Exception {
-            Equipos seleccionado = TableTeams.getSelectionModel().getSelectedItem();
-            if(seleccionado== null){
-                mostrarErrores("Error de validadcion", new Exception("No hay ningun equipo seleccionado"));
-                return;
+        Equipos seleccionado = TableTeams.getSelectionModel().getSelectedItem();
+        if(seleccionado == null){
+            mostrarErrores("Error de validacion", new Exception("No hay ningun equipo seleccionado"));
+            return;
+        }
+        if(datosliga.equipoTienePartidos(seleccionado)){
+            mostrarErrores("Error de validacion", new Exception("El equipo tiene partidos asignados en alguna liga"));
+            return;
+        }
+
+        javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                loq.eliminar(seleccionado.getIdEquipo());
+                loq.guardar(DataEquipos.getInstance().getEquipos());
+                return null;
             }
-            if(datosliga.equipoTienePartidos(seleccionado)){
-                mostrarErrores("Error de validadcion", new Exception("El equipo tiene partidos asignados en alguna liga"));
-                return;
-            }
-            DataEquipos.getInstance(null).getEquipos().remove(seleccionado);
-            limpiar(event);
+        };
+
+        task.setOnSucceeded(e -> {
+            cargar();
             TableTeams.refresh();
-            loq.guardar(DataEquipos.getInstance(Path.of("Data/equipos.xml")).getEquipos());
+            limpiarformulario();
+        });
+
+        task.setOnFailed(e -> mostrarErrores("Error al eliminar (remoto)", new Exception(task.getException())));
+
+        new Thread(task).start();
     }
 
     @FXML
@@ -131,7 +177,7 @@ public class Controller_MODIEquipos {
         limpiarformulario();
     }
     private String validarformulario(){
-        if(DataEquipos.getInstance(null).getEquipos().isEmpty()){
+        if(DataEquipos.getInstance().getEquipos().isEmpty()){
             return "No hay equipos registrados";
         }
         if (Nombretxt.getText() == null || Nombretxt.getText().trim().length()<3) {
@@ -156,7 +202,7 @@ public class Controller_MODIEquipos {
     public void buscar(ActionEvent actionEvent) {
         String busquedatxt = idequipo.getText().toLowerCase();
         try{
-            DataEquipos.getInstance(null).getEquiposfiltrados().setPredicate(p->{
+            DataEquipos.getInstance().getEquiposfiltrados().setPredicate(p->{
                 if(busquedatxt.isEmpty()) return true;
                 return (p.idEquipoProperty().get().toLowerCase().contains(busquedatxt));
 

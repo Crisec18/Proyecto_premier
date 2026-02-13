@@ -1,6 +1,7 @@
 package DTO;
 
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
@@ -17,8 +18,11 @@ public class PartidosDTO {
     StringProperty Idpartido;
     StringProperty Estadio;
     StringProperty estado;
-    StringProperty liga;
-    public PartidosDTO(String Nombre,Equipos local, Equipos visitante, String jornadas, String idpartido1 , LocalDate fecha , String estadio){
+    IntegerProperty liga;
+    private IntegerProperty goleslocal;
+    private IntegerProperty golesvisitante;
+
+    public PartidosDTO(String Nombre, Equipos local, Equipos visitante, String jornadas, String idpartido1, LocalDate fecha, String estadio) {
         this.idpartido = new SimpleStringProperty(idpartido1);
         this.fecha = fecha;
         this.local = local;
@@ -28,52 +32,102 @@ public class PartidosDTO {
         this.Estadio = new SimpleStringProperty(estadio);
         this.nombrepartido = new SimpleStringProperty(Nombre);
         this.estado = new SimpleStringProperty("Pendiente");
-        this.liga = new SimpleStringProperty("");
+        this.liga = new SimpleIntegerProperty(0);
+        this.goleslocal = new SimpleIntegerProperty(0);
+        this.golesvisitante = new SimpleIntegerProperty(0);
     }
-    public Equipos getlocal(){
+    public PartidosDTO() {
+        this.idpartido = new SimpleStringProperty("");
+        this.nombrepartido = new SimpleStringProperty("");
+        this.fecha = LocalDate.now();
+        this.jornadas = new SimpleStringProperty("");
+        this.Idpartido = new SimpleStringProperty("");
+        this.Estadio = new SimpleStringProperty("");
+        this.estado = new SimpleStringProperty("Pendiente");
+        this.liga = new SimpleIntegerProperty(0);
+        this.goleslocal = new SimpleIntegerProperty(0);
+        this.golesvisitante = new SimpleIntegerProperty(0);
+    }
+
+    public Equipos getlocal() {
         return local;
     }
-    public Equipos getvisitante(){
+
+    public Equipos getvisitante() {
         return visitante;
     }
-    public LocalDate getfecha(){
+
+    public LocalDate getfecha() {
         return fecha;
     }
-    public StringProperty jornadasProperty(){
+
+    public StringProperty jornadasProperty() {
         return jornadas;
     }
-    public StringProperty idpartidoProperty(){
+
+    public StringProperty idpartidoProperty() {
         return Idpartido;
     }
-    public StringProperty nombrepartidoProperty(){
+
+    public StringProperty nombrepartidoProperty() {
         return nombrepartido;
     }
-    public StringProperty estadioProperty(){
+
+    public StringProperty estadioProperty() {
         return Estadio;
     }
-    public StringProperty jornadaproperty(){
+
+    public StringProperty jornadaproperty() {
         return jornadas;
     }
-    public void setestado(){
+
+    public void setestado() {
         estado = new SimpleStringProperty("Finalizado");
     }
-    public StringProperty estadoProperty(){
+    public void setEstado(String estado) {
+        this.estado.set(estado);
+    }
+    public StringProperty estadoProperty() {
         return estado;
     }
-    public void setgoleslocal(int golesLocal, int golesVisitante){
-        local.setGolesafavor(local.golesFavorProperty().get() + golesLocal);
-        local.setGolesencontra(local.golesContraProperty().get() + golesVisitante);
-        local.setPartidosganados();
-        visitante.setPartidosperdidos();
+
+
+
+    public IntegerProperty golesLocalProperty() { return goleslocal; }
+    public IntegerProperty golesVisitanteProperty() { return golesvisitante; }
+    public void setGolesLocal(int goles) { this.goleslocal.set(goles); }
+    public void setGolesVisitante(int goles) { this.golesvisitante.set(goles); }
+
+    public void setliga(int liga1) {
+        liga = new SimpleIntegerProperty(liga1);
     }
-    public void setgolesvisitante(int golesVisitante, int golesLocal){
-        visitante.setGolesafavor(visitante.golesFavorProperty().get() + golesVisitante);
-        visitante.setGolesencontra(visitante.golesContraProperty().get() + golesLocal);
-        visitante.setPartidosganados();
-        local.setPartidosperdidos();
+    public void setIdPartido(int id) {
+        this.idpartido.set(String.valueOf(id));
+        this.Idpartido.set(String.valueOf(id));
     }
-    public void setliga(String liga1){
-        liga = new SimpleStringProperty(liga1);
+
+    public void setFecha(LocalDate fecha) {
+        this.fecha = fecha;
+    }
+
+    public void setLocal(Equipos local) {
+        this.local = local;
+    }
+
+    public void setVisitante(Equipos visitante) {
+        this.visitante = visitante;
+    }
+
+    public void setJornada(String jornada) {
+        this.jornadas.set(jornada);
+    }
+
+    public void setEstadio(String estadio) {
+        this.Estadio.set(estadio);
+    }
+
+    public void setNombrePartido(String nombre) {
+        this.nombrepartido.set(nombre);
     }
 
 
@@ -85,12 +139,14 @@ public class PartidosDTO {
         return visitante.golesFavorProperty();
     }
 
-   public StringProperty getIdpartido() {
+    public StringProperty getIdpartido() {
         return Idpartido;
     }
+
     public StringProperty getNombrepartido() {
         return nombrepartido;
     }
+
     public StringProperty getEstadio() {
         return Estadio;
     }
@@ -98,13 +154,15 @@ public class PartidosDTO {
     public StringProperty getJornadas() {
         return jornadas;
     }
-    public StringProperty getliga(){
+
+    public IntegerProperty getliga() {
         return liga;
     }
 
     public LocalDate fechaproperty() {
         return fecha;
     }
+
 
 
 }

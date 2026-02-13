@@ -26,6 +26,16 @@ public class LigaDTO {
         jornada = FXCollections.observableArrayList();
 
     }
+
+    public LigaDTO() {
+        this.id = new SimpleStringProperty("");
+        this.nombre = new SimpleStringProperty("");
+        this.region = new SimpleStringProperty("");
+        equipos = FXCollections.observableArrayList();
+        partidos = FXCollections.observableArrayList();
+        jornada = FXCollections.observableArrayList();
+    }
+
     public ObservableList<Equipos> getequipos(){
         return equipos;
     }
@@ -65,5 +75,26 @@ public class LigaDTO {
 
     public StringProperty regionligaproperty() {
         return region;
+    }
+
+    public void SetidLiga(int id) {
+        this.id.set(String.valueOf(id));
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre.set(nombre);
+    }
+
+    public void setregion(String region) {
+        this.region.set(region);
+    }
+
+
+    public String getRegion() {
+        return region.get();
+    }
+
+    public String getIdLiga() {
+        return id.get();
     }
 }

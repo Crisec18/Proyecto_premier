@@ -2,10 +2,8 @@ module practice_fx.proyecto_premier {
     requires javafx.controls;
     requires javafx.fxml;
     requires java.desktop;
-    requires javafx.base;
-    requires javafx.graphics;
-    requires jdk.management.agent;
     requires java.xml;
+    requires java.sql;
 
 
 

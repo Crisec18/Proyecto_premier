@@ -4,10 +4,14 @@ import DTO.Equipos;
 import DTO.LigaDTO;
 import Data.DataEquipos;
 import Data.DataGestorLiga;
+import client.EquipoServiceClientSocket;
+import client.LigaServiceClientSocket;
 
 import java.util.List;
 
 public class LogicLigas {
+    private final String host = "127.0.0.1";
+    private final int port = 5050;
     private final DataGestorLiga datos;
 
     public LogicLigas(DataGestorLiga datos) {
@@ -15,20 +19,15 @@ public class LogicLigas {
     }
 
     public List<LigaDTO> cargarligas() throws Exception {
-        return datos.cargar();
-    }
-
-    public void guardar(List<LigaDTO> equipos) throws Exception {
-        datos.guardar(equipos);
-    }
-
-    public int obtenerSiguienteId(List<Equipos> equipos) {
-        int max = 0;
-        for (Equipos e : equipos) {
-            if (e.getIdEquipo() > max) {;
-                max = e.getIdEquipo();
-            }
+        try (var service = new LigaServiceClientSocket(host, port)) {
+            return service.listarligas();
         }
-        return max + 1;
     }
+
+    public int guardarLiga(LigaDTO liga) throws Exception {
+        try (var service = new LigaServiceClientSocket(host, port)) {
+             return service.crearliga(liga);
+        }
+    }
+
 }

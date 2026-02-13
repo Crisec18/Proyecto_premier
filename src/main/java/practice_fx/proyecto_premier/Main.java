@@ -15,11 +15,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws Exception {
 
-        //Rutas de los xml
-        DataEquipos.getInstance(Path.of("Data/equipos.xml"));
 
-        DataPartidos.getInstance(Path.of("Data/partidos.xml"));
-        DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/practice_fx/proyecto_premier/creacion_equipos.fxml")

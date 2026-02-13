@@ -20,6 +20,21 @@ public class Equipos {
         private IntegerProperty golesencontra;
         private IntegerProperty puntos;
 
+        public Equipos(){
+            this.id = new SimpleStringProperty("");
+            this.nombre = new SimpleStringProperty("");
+            this.estadio = new SimpleStringProperty("");
+            this.ciudad = new SimpleStringProperty("");
+            this.annio = LocalDate.now();
+            this.partidosjugados = new SimpleIntegerProperty(0);
+            this.partidosganados = new SimpleIntegerProperty(0);
+            this.partidosempatados = new SimpleIntegerProperty(0);
+            this.partidosperdidos = new SimpleIntegerProperty(0);
+            this.golesafavor = new SimpleIntegerProperty(0);
+            this.golesencontra = new SimpleIntegerProperty(0);
+            this.puntos = new SimpleIntegerProperty(0);
+        }
+
         public Equipos(String id1, String nombre, String estadio, String ciudad, LocalDate annio) {
             this.id = new SimpleStringProperty(id1);
             this.nombre = new SimpleStringProperty(nombre);
@@ -70,6 +85,21 @@ public class Equipos {
         public LocalDate getAnnio() { return annio; }
         public int getPuntos() { return puntos.get(); }
 
+    public void setIdEquipo(int idEquipo) {
+        this.id.set(String.valueOf(idEquipo));
+    }
+
+    public void setAnioFundacion(int anio) {
+        this.annio = LocalDate.of(anio, 1, 1);
+    }
+
+    public String getCiudad() { return ciudad.get(); }
+
+    public String getEstadio() { return estadio.get(); }
+
+    public int getAnioFundacion() {
+        return annio.getYear();
+    }
     //auxiliares
     public int getIdEquipo() {
         try{
@@ -78,8 +108,26 @@ public class Equipos {
             return 0;
         }
     }
-
     public void setPartidosjugados(int i) {
         this.partidosjugados.set(i);
     }
+    public int getPartidosJugados() {
+        return partidosjugados.get();
+    }
+    public int getPartidosGanados() {
+        return partidosganados.get();
+    }
+    public int getPartidosPerdidos() {
+        return partidosperdidos.get();
+    }
+    public int getPartidosEmpatados() {
+        return partidosempatados.get();
+    }
+    public int getGolesFavor() {
+        return golesafavor.get();
+    }
+    public int getGolesContra() {
+        return golesencontra.get();
+    }
+
 }

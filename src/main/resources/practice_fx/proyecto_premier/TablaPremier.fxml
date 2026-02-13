@@ -31,7 +31,7 @@
             <TableColumn fx:id="txtID" minWidth="0.0" prefWidth="44.0" text="ID" />
           <TableColumn fx:id="tblEquipo" prefWidth="231.99999237060547" text="EQUIPOS" />
             <TableColumn fx:id="txtGanados" prefWidth="126.4000244140625" text="GANADOS" />
-            <TableColumn fx:id="txtPerdidos" prefWidth="89.60000610351562" text="PERDIDOS" />
+            <TableColumn fx:id="txtPerdidos" prefWidth="89.60000610351562" sortable="false" text="PERDIDOS" />
             <TableColumn fx:id="txtEmpates" minWidth="8.0" prefWidth="92.0" text="EMPATES" />
             <TableColumn fx:id="txtGolesAFavor" minWidth="0.0" prefWidth="112.0" text="GOLES(A FAVOR)" />
             <TableColumn fx:id="tabGolesContra" prefWidth="140.7999267578125" text="GOLES(EN CONTRA)" />

@@ -1,28 +1,29 @@
 package Controllers;
 
+import java.io.IOException;
+
 import DTO.Equipos;
 import Data.DataEquipos;
 import Data.DataGestorLiga;
 import Logic.LogicLigas;
 import Logic.LogicaEquipo;
-import Data.Datasingleton;
-import Logic.LogicaEquipo;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Controller_CEquipos {
 
@@ -60,9 +61,9 @@ public class Controller_CEquipos {
     private Label lblRegistrados;
 
 
-    private final DataEquipos datosEquipos = DataEquipos.getInstance(null);
+    private final DataEquipos datosEquipos = DataEquipos.getInstance();
     private final LogicaEquipo loq = new LogicaEquipo(datosEquipos);;
-    private final DataGestorLiga datosliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+    private final DataGestorLiga datosliga = DataGestorLiga.getInstance();
     private final LogicLigas logicaLiga = new LogicLigas(datosliga);
 
     @FXML
@@ -83,78 +84,74 @@ public class Controller_CEquipos {
     }
 
     private void actualizarContador() {
-        int total = DataEquipos.getInstance(null).getEquipos().size();
+        int total = DataEquipos.getInstance().getEquipos().size();
         lblRegistrados.setText("Equipos Registrados: " + total);
     }
 
-//aplicar lo de los errores
+
     @FXML
     void guardar(ActionEvent event) {
-        try {
-            boolean existe = DataEquipos.getInstance(Path.of("Data/equipos.xml")).getEquipos().stream()
-                    .anyMatch(equipo
-                            -> equipo.nombreEquipoProperty().get().equals(nombretxtfield.getText()));
-            if (existe) {
-                mostrarErrores("Error de Existencia", new Exception("Equipo existente"));
-                return;
-            }
-            if (validarformulario() != null) {
-                mostrarErrores("Error de validacion", new Exception(validarformulario()));
-                return;
-            }
-            datosEquipos.agregarequipo(
-                    nombretxtfield.getText(),
-                    estadiotextfield.getText(),
-                    ciudadtextfield.getText(),
-                    fechacreacion.getValue());
+        boolean existe = DataEquipos.getInstance().getEquipos().stream()
+                .anyMatch(equipo -> equipo.nombreEquipoProperty().get().equals(nombretxtfield.getText()));
 
-
-
-            // Se guarda el estado actual en XML
-            try {
-                loq.guardar(datosEquipos.getEquipos());
-                TableTeams.refresh();
-            }catch (Exception e){
-            mostrarErrores("Error al guardar equipos", e);}
-            limpiarformulario();
-        } catch (Exception e) {
-            mostrarErrores("Se produjo un error general al guardar...", e);
+        if (existe) {
+            mostrarErrores("Error de Existencia", new Exception("Equipo existente"));
+            return;
         }
 
-    }
-//por revisar
-@FXML
-void eliminar(ActionEvent event) {
-    Equipos seleccionado = TableTeams.getSelectionModel().getSelectedItem();
+        if (validarformulario() != null) {
+            mostrarErrores("Error de validacion", new Exception(validarformulario()));
+            return;
+        }
+        Equipos nuevoequipo = new Equipos(
+                "0",
+                nombretxtfield.getText(),
+                estadiotextfield.getText(),
+                ciudadtextfield.getText(),
+                fechacreacion.getValue()
+        );
 
-    if (seleccionado == null) {
-        mostrarErrores("Eliminar", new Exception("Debe seleccionar un equipo"));
-        return;
+        javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                loq.guardarEquipo(nuevoequipo);
+                return null;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            cargar();
+            limpiarformulario();
+        });
+
+        task.setOnFailed(e -> mostrarErrores("Error al guardar equipos (remoto)", new Exception(task.getException())));
+
+        new Thread(task).start();
+
     }
-    datosEquipos.getEquipos().remove(seleccionado);
-    try {
-        loq.guardar(datosEquipos.getEquipos());
-    } catch (Exception e) {
-        mostrarErrores("Error al guardar cambios", e);
-    }
-    TableTeams.refresh();
-    limpiarformulario();
-}
 
     private void cargar(){
-        try {
-            datosEquipos.getEquipos().setAll(loq.cargarEquipos());
-            datosEquipos.actualizarContadorId();
-        } catch (Exception e) {
-            mostrarErrores("Error al cargar equipos", e);
-        }
+        javafx.concurrent.Task<java.util.List<Equipos>> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected java.util.List<Equipos> call() throws Exception {
+                return loq.cargarEquipos();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            datosEquipos.getEquipos().setAll(task.getValue());
+            actualizarContador();
+        });
+
+        task.setOnFailed(e -> mostrarErrores("Error al cargar equipos (remoto)", new Exception(task.getException())));
+
+        new Thread(task).start();
     }
 
     @FXML
     void limpiar(ActionEvent event) {
         limpiarformulario();
     }
-
 
 
     private String validarformulario(){

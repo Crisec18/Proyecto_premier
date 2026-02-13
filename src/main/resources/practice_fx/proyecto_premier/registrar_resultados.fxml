@@ -32,7 +32,7 @@
             <Font name="System Italic" size="15.0" />
          </font>
       </Label>
-      <ComboBox fx:id="combojornada" layoutX="613.0" layoutY="84.0" prefWidth="150.0" />
+      <ComboBox fx:id="combojornada" layoutX="613.0" layoutY="84.0" onAction="#filtrarjornada" prefWidth="150.0" />
       <Label layoutX="213.0" layoutY="61.0" text="Registrar Resultados" textFill="WHITE">
          <font>
             <Font name="System Italic" size="24.0" />

@@ -17,6 +17,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 public class Controller_CLiga {
 
@@ -37,12 +38,12 @@ public class Controller_CLiga {
 
     @FXML
     private TableView<LigaDTO> Tablaliga;
-        DataGestorLiga gestorliga = DataGestorLiga.getInstance(Path.of("Data/ligas.xml"));
+        DataGestorLiga gestorliga = DataGestorLiga.getInstance();
         LogicLigas lq = new LogicLigas(gestorliga);
     @FXML
     void guardar(ActionEvent event) {
         try {
-            boolean existe = DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigas().stream()
+            boolean existe = DataGestorLiga.getInstance().getLigas().stream()
                     .anyMatch(Liga -> Liga.nombreLigaProperty().get().equals(txtnombreliga.getText()));
             if (existe) {
                 mostrarErrores("Error de Existencia", new Exception(validarformulario()));
@@ -53,26 +54,40 @@ public class Controller_CLiga {
                 mostrarErrores("Error de validadcion", new Exception(validarformulario()));
                 return;
             }
-            DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).agregarLiga(txtnombreliga.getText(),
-                    txtregionliga.getText());
-            try {
-                lq.guardar(gestorliga.getLigas());
-                Tablaliga.refresh();
-            }catch (Exception e){
-                mostrarErrores("Se produjo un error al guardar...", e);
-            }
+            LigaDTO nuevaLiga = new LigaDTO("0",txtnombreliga.getText(), txtregionliga.getText());
+            javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    lq.guardarLiga(nuevaLiga);
+                    return null;
+                }
+            };
+            task.setOnSucceeded(e -> {
+                cargar();
+                limpiarformulario();
+            });
+            task.setOnFailed(e -> mostrarErrores("Error al guardar liga (remoto)", new Exception(task.getException())));
+
+            new Thread(task).start();
 
         }catch (Exception e){
             mostrarErrores("Se produjo un error al guardar...", e);
         }
     }
     private void cargar(){
-        try {
-            gestorliga.getLigas().setAll(lq.cargarligas());
-            gestorliga.actualizarContadorId();
-        } catch (Exception e) {
-            mostrarErrores("Error al cargar equipos", e);
-        }
+        javafx.concurrent.Task<java.util.List<LigaDTO>> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected List<LigaDTO> call() throws Exception {
+                return lq.cargarligas();
+            }
+        };
+        task.setOnSucceeded(e -> {
+            gestorliga.getLigas().setAll(task.getValue());
+        });
+        task.setOnFailed(e -> {
+            mostrarErrores("Error al cargar las ligas", new Exception(task.getException()));
+        });
+        new Thread(task).start();
     }
 
     @FXML
@@ -91,7 +106,7 @@ public class Controller_CLiga {
         Colid.setCellValueFactory(data-> data.getValue().idLigaProperty());
         Colname.setCellValueFactory(data->data.getValue().nombreLigaProperty());
         Colregion.setCellValueFactory(data->data.getValue().regionLigaProperty());
-        Tablaliga.setItems(DataGestorLiga.getInstance(Path.of("Data/ligas.xml")).getLigasfiltradas());
+        Tablaliga.setItems(DataGestorLiga.getInstance().getLigasfiltradas());
         cargar();
     }
 

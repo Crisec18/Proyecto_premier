@@ -24,16 +24,22 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.sql.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DataGestorLiga {
+    // sentencias SQL
+    private static final String SQL_INSERT_LIGA =
+            "INSERT INTO Liga (nombre, region) VALUES (?, ?)";
+
+    private static final String SQL_SELECT_LIGAS =
+            "SELECT id, nombre, region FROM Liga";
+
+
+
     private static DataGestorLiga instance;
-    private final Path RutaligasXML;
-
-
     private final AtomicInteger idcounter = new AtomicInteger(1);
     private ObservableList<LigaDTO> ligas;
     private ObservableList<Equipos> todoslosequipos;
@@ -43,8 +49,7 @@ public class DataGestorLiga {
     private final FilteredList<Equipos> equiposFiltrados;
 
 
-    public DataGestorLiga(Path RutaligasXML) {
-        this.RutaligasXML = RutaligasXML;
+    public DataGestorLiga() {
         todoslosequipos = FXCollections.observableArrayList();
         ligas = javafx.collections.FXCollections.observableArrayList();
         ligasfiltradas = new FilteredList<>(ligas);
@@ -52,9 +57,9 @@ public class DataGestorLiga {
 
     }
 
-    public static DataGestorLiga getInstance(Path RutaligasXML) {
+    public static DataGestorLiga getInstance() {
         if (instance == null) {
-            instance = new DataGestorLiga(RutaligasXML);
+            instance = new DataGestorLiga();
         }
         return instance;
     }
@@ -73,20 +78,7 @@ public class DataGestorLiga {
         ligas.add(liga);
     }
 
-    public ObservableList<Equipos> getEquiposDeLiga(LigaDTO liga) {
-        return liga.getequipos();
 
-    }
-
-    public void agregarEquipoALiga(LigaDTO liga, DTO.Equipos equipo) {
-        liga.getequipos().add(equipo);
-        todoslosequipos.add(equipo);
-
-    }
-
-    public ObservableList<Equipos> getTodosLosEquipos() {
-        return todoslosequipos;
-    }
 
     public FilteredList<Equipos> getEquiposFiltrados() {
         return equiposFiltrados;
@@ -126,11 +118,14 @@ public class DataGestorLiga {
         }
         return null;
     }
+    public ObservableList<Equipos> getTodosLosEquipos() {
+        return todoslosequipos;
+    }
 
 
     public boolean verificarcamposequipos(String nombreLiga) {
         LigaDTO liga = buscarLigaPorNombre(nombreLiga);
-        return liga != null && liga.getpartidos().size() >= 25;
+        return liga != null && liga.getpartidos().size() >= 20;
     }
 
     public boolean verificarcampospartido(String nombreLiga) {
@@ -139,7 +134,7 @@ public class DataGestorLiga {
     }
 
     public boolean equipoTienePartidos(Equipos equipo) {
-        return DataPartidos.getInstance(null).getPartidos().stream()
+        return DataPartidos.getInstance().getPartidos().stream()
                 .anyMatch(p ->
                         p.getlocal().idEquipoProperty().get()
                                 .equals(equipo.idEquipoProperty().get())
@@ -151,12 +146,20 @@ public class DataGestorLiga {
 
     public boolean equipoEnOtraLiga(Equipos equipo, String ligaActual, DataPartidos dataPartidos) {
         String idEquipo = equipo.idEquipoProperty().get();
+        LigaDTO liga = this.getLigas().stream()
+                .filter(l -> l.nombreLigaProperty().get().equals(ligaActual))
+                .findFirst()
+                .orElse(null);
+
+        if (liga == null) return false;
+
+        int idLigaActual = Integer.parseInt(liga.idLigaProperty().get());
 
         boolean tienePartidosEnOtraLiga = dataPartidos.getPartidos().stream()
                 .anyMatch(p -> {
                     boolean esLocal = p.getlocal().idEquipoProperty().get().equals(idEquipo);
                     boolean esVisitante = p.getvisitante().idEquipoProperty().get().equals(idEquipo);
-                    boolean enOtraLiga = !p.getliga().get().equals(ligaActual);
+                    boolean enOtraLiga = p.getliga().get() != idLigaActual;
                     return (esLocal || esVisitante) && enOtraLiga;
                 });
 
@@ -173,7 +176,6 @@ public class DataGestorLiga {
     }
 
 
-
     public void actualizarContadorId() {
         int maxId = 0;
         for (LigaDTO liga : ligas) {
@@ -187,156 +189,202 @@ public class DataGestorLiga {
         }
         idcounter.set(maxId + 1);
     }
-    private Equipos buscarEquipoPorId(DataEquipos dataEquipos, String id) {
-        return dataEquipos.getEquipos().stream()
-                .filter(eq -> eq.idEquipoProperty().getValue().equals(id))
-                .findFirst()
-                .orElse(null);
-    }
 
-    public List<LigaDTO> cargar() throws Exception {
-        if (!Files.exists(RutaligasXML)) {
-            //si no hay, retornar lista vacia
-            return new ArrayList<>();
-        }
-        Document doc;
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setIgnoringComments(true);
-        dbf.setNamespaceAware(false);
-
-        DocumentBuilder db = dbf.newDocumentBuilder();
-
-        try (InputStream in = Files.newInputStream(RutaligasXML)) {
-            doc = db.parse(in);
-        }
-
-        doc.getDocumentElement().normalize();
-
-        List<LigaDTO> listaLigas = new ArrayList<>();
-        NodeList nodolist = doc.getElementsByTagName("liga");
-        DataEquipos dataEquipos = DataEquipos.getInstance(Path.of("Data/equipos.xml"));
-
-        DataPartidos dataPartidos = DataPartidos.getInstance(Path.of("Data/partidos.xml"));
-        dataPartidos.getPartidos().setAll(dataPartidos.cargar());
-
-        for (int i = 0; i < nodolist.getLength(); i++) {
-            Node n = nodolist.item(i);
-            if (n.getNodeType() != Node.ELEMENT_NODE) continue;
-
-            Element ligaElement = (Element) n;
-
-            String idLiga = getText(ligaElement, "idliga");
-            String nombreLiga = getText(ligaElement, "nombreliga");
-            String region = getText(ligaElement, "region");
-
-            LigaDTO liga = new LigaDTO(idLiga, nombreLiga, region);
-            List<String> idsEquiposAgregados = new ArrayList<>();
-
-            // BUSCAR PARTIDOS QUE PERTENECEN A ESTA LIGA
-            for (PartidosDTO partido : dataPartidos.getPartidos()) {
-                String ligaPartido = partido.getliga().get();
-                if (ligaPartido != null && !ligaPartido.isEmpty() && ligaPartido.equals(nombreLiga))  {
-
-                    // Agregar el partido a la liga
-                    liga.getpartidos().add(partido);
-
-                    // Agregar los equipos
-                    String idLocal = partido.getlocal().idEquipoProperty().getValue();
-                    String idVisitante = partido.getvisitante().idEquipoProperty().getValue();
-
-                    if (idsEquiposAgregados.add(idLocal)) {
-                        liga.getequipos().add(partido.getlocal());
-                    }
-                    if (idsEquiposAgregados.add(idVisitante)) {
-                        liga.getequipos().add(partido.getvisitante());
-                    }
-                }
-            }
-
-            listaLigas.add(liga);
-        }
-        return listaLigas;
-    }
-
-    public void guardar(List<LigaDTO> listaligas) throws Exception {
-        if (RutaligasXML.getParent() != null) {
-            Files.createDirectories(RutaligasXML.getParent());
-        }
-
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document doc = db.newDocument();
-
-        Element root = doc.createElement("ligas");
-        doc.appendChild(root);
-
-        for (  LigaDTO ligas : listaligas) {
-           Element eq = doc.createElement("liga");
-            root.appendChild(eq);
-            // info de la liga
-            agregar(doc, eq, "idliga", ligas.idLigaProperty().getValue());
-            agregar(doc, eq, "nombreliga", ligas.nombreLigaProperty().getValue());
-            agregar(doc, eq, "region", ligas.regionligaproperty().getValue());
-            // info de los partidos de la liga
-            for (PartidosDTO partido : ligas.getpartidos()) {
-                Element partidoElement = doc.createElement("partido");
-                eq.appendChild(partidoElement);
-
-                // Información del partido
-                agregar(doc, partidoElement, "idPartido", partido.idpartidoProperty().getValue());
-                agregar(doc, partidoElement, "nombrePartido", partido.nombrepartidoProperty().getValue());
-                agregar(doc, partidoElement, "jornada", partido.jornadasProperty().getValue());
-                agregar(doc, partidoElement, "estadio", partido.estadioProperty().getValue());
-                agregar(doc, partidoElement, "fecha", partido.getfecha().toString());
-                agregar(doc, partidoElement, "liga", ligas.nombreLigaProperty().getValue());
-                agregar(doc, partidoElement, "estado", partido.estadoProperty().getValue());
-
-                // Referencias a los equipos (solo IDs, no el objeto completo)
-                agregar(doc, partidoElement, "idEquipoLocal", partido.getlocal().idEquipoProperty().getValue());
-                agregar(doc, partidoElement, "idEquipoVisitante", partido.getvisitante().idEquipoProperty().getValue());
-            }
-        }
-
-        TransformerFactory tf = TransformerFactory.newInstance();
-        Transformer t = tf.newTransformer();
-        t.setOutputProperty(OutputKeys.INDENT, "yes");
-        //sinceramente esto no se para que es pero el profe lo metio, para algo sera
-        t.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-        t.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_8.name());
-
-        try (OutputStream out = Files.newOutputStream(RutaligasXML, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-            t.transform(new DOMSource(doc), new StreamResult(out));
-        }
-    }
-
-    //Utilidades para XML................................................
-    private String getText(org.w3c.dom.Element e, String tag) {
-        NodeList nl = e.getElementsByTagName(tag);
-        if (nl.getLength() == 0) return "";
-        return nl.item(0).getTextContent();
-    }
-
-    private static void agregar(Document doc, org.w3c.dom.Element patent, String tag, String value){
-        Element ele = doc.createElement(tag);
-        ele.appendChild(doc.createTextNode(value == null ? "" : value));
-        patent.appendChild(ele);
-    }
-
-    // esto es para pasar de string a int con valor por defecto, pero no se usa de momento
-    private static int parseInt(String s, int def) {
-        try {
-            return Integer.parseInt(s.trim());
-        } catch (Exception ex) {
-            return def;
-        }
-    }
 
     public void filtrarPorLiga(LigaDTO ligaSeleccionada) {
         if (ligaSeleccionada == null) {
             ligasfiltradas.setPredicate(liga -> true);
+            equiposFiltrados.setPredicate(equipo -> true);
         } else {
             ligasfiltradas.setPredicate(liga -> liga.equals(ligaSeleccionada));
+            equiposFiltrados.setPredicate(equipo ->
+                    ligaSeleccionada.getequipos().stream()
+                            .anyMatch(e -> e.idEquipoProperty().get().equals(equipo.idEquipoProperty().get()))
+            );
         }
+    }
+
+    //CREACIONES SQL
+
+    public void cargarLigaCompletaSQL(LigaDTO liga) throws SQLException {
+        int idLiga = Integer.parseInt(liga.idLigaProperty().get());
+
+        // 1. Cargar todos los partidos de esta liga
+        String SQL_PARTIDOS_LIGA =
+                "SELECT p.id, p.fecha, p.jornada, p.estadio, p.estado, " +
+                        "p.goles_local, p.goles_visitante, " +
+                        "p.id_equipo_local, p.id_equipo_visitante " +
+                        "FROM Partido p WHERE p.id_liga = ?";
+
+        // 2. Cargar equipos únicos de esta liga
+        String SQL_EQUIPOS_LIGA =
+                "SELECT DISTINCT e.id, e.nombre, e.estadio, e.ciudad, e.annio_fundacion, " +
+                        "e.partidos_jugados, e.partidos_ganados, e.partidos_perdidos, " +
+                        "e.goles_empatados, e.goles_a_favor, e.goles_en_contra, e.puntos " +
+                        "FROM Equipo e " +
+                        "INNER JOIN Partido p ON (e.id = p.id_equipo_local OR e.id = p.id_equipo_visitante) " +
+                        "WHERE p.id_liga = ?";
+
+        try(Connection con = ConnectionFactory.getConnection()) {
+            Map<String, Equipos> equiposMap = new HashMap<>();
+            try(PreparedStatement ps = con.prepareStatement(SQL_EQUIPOS_LIGA)) {
+                ps.setInt(1, idLiga);
+                try(ResultSet rs = ps.executeQuery()) {
+                    while(rs.next()) {
+                        String id = rs.getString("id");
+                        Equipos equipo = new Equipos(
+                                id,
+                                rs.getString("nombre"),
+                                rs.getString("estadio"),
+                                rs.getString("ciudad"),
+                                rs.getDate("annio_fundacion").toLocalDate()
+                        );
+                        equipo.setPartidosjugados(rs.getInt("partidos_jugados"));
+                        equipo.setpartidosgandos(rs.getInt("partidos_ganados"));
+                        equipo.setpartidosperdidos(rs.getInt("partidos_perdidos"));
+                        equipo.setPartidosempatados(rs.getInt("goles_empatados"));
+                        equipo.setGolesafavor(rs.getInt("goles_a_favor"));
+                        equipo.setGolesencontra(rs.getInt("goles_en_contra"));
+                        equipo.setPuntos(rs.getInt("puntos"));
+
+                        liga.getequipos().add(equipo);
+                        equiposMap.put(id, equipo);
+                    }
+                }
+            }
+
+            // Luego cargar partidos
+            try(PreparedStatement ps = con.prepareStatement(SQL_PARTIDOS_LIGA)) {
+                ps.setInt(1, idLiga);
+                try(ResultSet rs = ps.executeQuery()) {
+                    while(rs.next()) {
+                        String idPartido = rs.getString("id");
+                        Equipos local = equiposMap.get(rs.getString("id_equipo_local"));
+                        Equipos visitante = equiposMap.get(rs.getString("id_equipo_visitante"));
+
+                        PartidosDTO partido = new PartidosDTO(
+                                local.getNombre() + " vs " + visitante.getNombre(),
+                                local,
+                                visitante,
+                                rs.getString("jornada"),
+                                idPartido,
+                                rs.getDate("fecha").toLocalDate(),
+                                rs.getString("estadio")
+                        );
+                        partido.estadoProperty().set(rs.getString("estado"));
+                        partido.setliga(idLiga);
+
+                        liga.getpartidos().add(partido);
+                    }
+                }
+            }
+
+            // Cargar jornadas únicas
+            Set<String> jornadasSet = new HashSet<>();
+            for(PartidosDTO p : liga.getpartidos()) {
+                jornadasSet.add(p.jornadasProperty().get());
+            }
+            liga.getjornadas().addAll(jornadasSet);
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al cargar liga completa: " + e.getMessage(), e);
+        }
+    }
+
+    public int guardarLigasSQL(LigaDTO Liga) throws SQLException {
+            try(Connection con = ConnectionFactory.getConnection();
+                PreparedStatement ps = con.prepareStatement(SQL_INSERT_LIGA, Statement.RETURN_GENERATED_KEYS)
+            ){
+                ps.setString(1, Liga.nombreLigaProperty().getValue());
+                ps.setString(2, Liga.regionLigaProperty().getValue());
+                ps.executeUpdate();
+
+                try (ResultSet rs = ps.getGeneratedKeys()){
+                    if(rs.next()){
+                        int generatedId = rs.getInt(1);
+                        Liga.idLigaProperty().setValue(String.valueOf(rs.getInt(1)));
+                        return generatedId;
+                    }
+                }
+                return -1;
+            }catch (SQLException e){
+                throw new RuntimeException("Error al insertar liga: " + e.getMessage(), e);
+            }
+        }
+
+    public List<LigaDTO> cargarSQL() throws SQLException {
+        List<LigaDTO> listaLigas = new ArrayList<>();
+        try(Connection con = ConnectionFactory.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQL_SELECT_LIGAS);
+            ResultSet rs = ps.executeQuery()
+        ){
+            while (rs.next()){
+                LigaDTO liga = new LigaDTO(
+                        rs.getString("id"),
+                        rs.getString("nombre"),
+                        rs.getString("region")
+                );
+                cargarLigaCompletaSQL(liga);
+                listaLigas.add(liga);
+            }
+        }
+        return listaLigas;
+    }
+
+    /**
+     * Verifica si un equipo ya tiene partidos en una liga diferente a la especificada
+     * @param idEquipo ID del equipo a verificar
+     * @param idLigaActual ID de la liga actual (se excluye de la búsqueda)
+     * @return true si el equipo tiene partidos en otra liga, false en caso contrario
+     */
+    public boolean equipoEnOtraLigaSQL(int idEquipo, int idLigaActual) throws SQLException {
+        String SQL_EQUIPO_EN_OTRA_LIGA = 
+            "SELECT COUNT(*) as total FROM Partido " +
+            "WHERE (id_equipo_local = ? OR id_equipo_visitante = ?) " +
+            "AND id_liga != ?";
+        
+        try (Connection con = ConnectionFactory.getConnection();
+             PreparedStatement ps = con.prepareStatement(SQL_EQUIPO_EN_OTRA_LIGA)) {
+            
+            ps.setInt(1, idEquipo);
+            ps.setInt(2, idEquipo);
+            ps.setInt(3, idLigaActual);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total") > 0;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Verifica si un equipo ya está registrado en una liga específica
+     * @param idEquipo ID del equipo a verificar
+     * @param idLiga ID de la liga
+     * @return true si el equipo tiene partidos en esta liga, false en caso contrario
+     */
+    public boolean equipoYaEnLigaSQL(int idEquipo, int idLiga) throws SQLException {
+        String SQL_EQUIPO_EN_LIGA = 
+            "SELECT COUNT(*) as total FROM Partido " +
+            "WHERE (id_equipo_local = ? OR id_equipo_visitante = ?) " +
+            "AND id_liga = ?";
+        
+        try (Connection con = ConnectionFactory.getConnection();
+             PreparedStatement ps = con.prepareStatement(SQL_EQUIPO_EN_LIGA)) {
+            
+            ps.setInt(1, idEquipo);
+            ps.setInt(2, idEquipo);
+            ps.setInt(3, idLiga);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total") > 0;
+                }
+            }
+        }
+        return false;
     }
 }
 

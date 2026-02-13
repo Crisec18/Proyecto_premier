@@ -23,11 +23,27 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.sql.*;
 
 public class DataEquipos {
+    //SQL no se incluye el id porque es auto incremental
+    private static final String SQL_INSERT_EQUIPO =
+            "INSERT INTO Equipo " +
+                    "(nombre, estadio, ciudad, " +
+                    "annio_fundacion) VALUES (?, ?, ?, ?)";
+    private static final String SQL_SELECT_EQUIPOS =
+            "SELECT id, nombre, estadio, ciudad, annio_fundacion, " +
+                    "partidos_jugados, partidos_ganados, partidos_perdidos, " +
+                    "goles_empatados, goles_a_favor, goles_en_contra, puntos " +
+                    "FROM Equipo";
+    private static final String SQL_UPDATE_EQUIPO =
+            "UPDATE Equipo SET nombre = ?, estadio = ?, ciudad = ?, annio_fundacion = ? WHERE id = ?";
 
+    private static final String SQL_UPDATE_ESTADISTICAS =
+            "UPDATE Equipo SET partidos_jugados = ?, partidos_ganados = ?, " +
+                    "partidos_perdidos = ?, goles_empatados = ?, goles_a_favor = ?, " +
+                    "goles_en_contra = ?, puntos = ? WHERE id = ?";
     //XML para equipos
-    private final Path RutaEquiposXML;
     private static DataEquipos instance;
 
 
@@ -37,16 +53,15 @@ public class DataEquipos {
     private FilteredList<Equipos> filtradovisitante;
 
     //contructor
-    public DataEquipos(Path rutaEquiposXML){
-        RutaEquiposXML = rutaEquiposXML;
+    public DataEquipos(){
         equipos = FXCollections.observableArrayList();
         equiposfiltrados = new FilteredList<>(equipos);
         filtradovisitante = new FilteredList<>(equipos);
     }
 //singlenton con ruta xml
-    public static DataEquipos getInstance(Path rutaEquiposXML) {
+    public static DataEquipos getInstance() {
         if (instance == null) {
-            instance = new DataEquipos(rutaEquiposXML);
+            instance = new DataEquipos();
         }
         return instance;
     }
@@ -63,146 +78,117 @@ public class DataEquipos {
         return filtradovisitante;
     }
 
-    public void agregarequipo(String nombre, String estadio, String ciudad, LocalDate annio ){
-        String id = String.valueOf(idcounter.getAndIncrement()); // consultar esto con el profe
-        Equipos equipo = new Equipos(id, nombre, estadio, ciudad, annio);
-        equipos.add(equipo);
-    }
 
-    public void actualizarContadorId() {
-        int maxId = 0;
-        for (Equipos equipo : equipos) {
-            try {
-                int idActual = Integer.parseInt(equipo.idEquipoProperty().getValue());
-                if (idActual > maxId) {
-                    maxId = idActual;
+
+
+
+
+    //GUARDAR EN SQL
+    public int insertarSQL(Equipos equi) throws SQLException {
+        try(Connection con = ConnectionFactory.getConnection();
+        PreparedStatement ps = con.prepareStatement(SQL_INSERT_EQUIPO,Statement.RETURN_GENERATED_KEYS)
+        ){
+            ps.setString(1, equi.nombreEquipoProperty().getValue());
+            ps.setString(2, equi.estadioEquipoProperty().getValue());
+            ps.setString(3, equi.ciudadEquipoProperty().getValue());
+            ps.setDate(4, Date.valueOf(equi.getAnnio()));
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()){
+                if(rs.next()){
+                    int generatedId = rs.getInt(1);
+                    equi.idEquipoProperty().setValue(String.valueOf(generatedId));
+                    return generatedId;
                 }
-            } catch (NumberFormatException e) {
             }
+            return -1;
+        }catch (SQLException e){
+            throw new RuntimeException("Error al insertar equipo" + e.getMessage(), e);
         }
-        idcounter.set(maxId + 1);
     }
 
-//XML...............................................................................................................
-    //cargar desde el xml
-    public List<Equipos> cargar() throws Exception {
-        if (!Files.exists(RutaEquiposXML)) {
-            //si no hay, retornar lista vacia
-            return new ArrayList<>();
-        }
-        Document doc;
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setIgnoringComments(true);
-        dbf.setNamespaceAware(false);
+        //Modificar en SQL
+    public void ModificarSQL(Equipos equipo) throws SQLException {
 
-        DocumentBuilder db = dbf.newDocumentBuilder();
 
-        try (InputStream in = Files.newInputStream(RutaEquiposXML)) {
-            doc = db.parse(in);
-        }
+    }
 
-        doc.getDocumentElement().normalize();
-
+    public List<Equipos> cargarSQL() throws SQLException {
         List<Equipos> listaEquipos = new ArrayList<>();
-        NodeList nodolist = doc.getElementsByTagName("equipo");
+        try(Connection con = ConnectionFactory.getConnection();
+        PreparedStatement ps = con.prepareStatement(SQL_SELECT_EQUIPOS);
+        ResultSet rs = ps.executeQuery()
+        ){
+            while (rs.next()){
+                String idEquipo = rs.getString("id");
+                String nombreEquipo = rs.getString("nombre");
+                String estadioEquipo = rs.getString("estadio");
+                String ciudadEquipo = rs.getString("ciudad");
+                LocalDate annioFundacion = rs.getDate("annio_fundacion").toLocalDate();
 
-        //recorrer nodos que son los elementos equipo
-        for (int i = 0; i < nodolist.getLength(); i++) {
-            Node n = nodolist.item(i);
-            if (n.getNodeType() != Node.ELEMENT_NODE) continue;
-
-            Element e = (Element) n;
-
-            //serializa cada equipo
-            String idEquipo = getText(e, "idEquipo");
-            String nombreEquipo = getText(e, "nombreEquipo");
-            String estadioEquipo = getText(e, "estadioEquipo");
-            String ciudadEquipo = getText(e, "ciudadEquipo");
-            LocalDate annioFundacion = LocalDate.parse(getText(e, "annioFundacion"));
-
-            Equipos equipo = new Equipos(
-                    String.valueOf(idEquipo),
-                    nombreEquipo,
-                    estadioEquipo,
-                    ciudadEquipo,
-                    annioFundacion
-            );
-
-            equipo.setPuntos(parseInt(getText(e, "puntos"), 0));
-            equipo.setpartidosgandos(parseInt(getText(e, "partidosGanados"), 0));
-            equipo.setPartidosempatados(parseInt(getText(e, "partidosEmpatados"), 0));
-            equipo.setpartidosperdidos(parseInt(getText(e, "partidosPerdidos"), 0));
-            equipo.setGolesafavor(parseInt(getText(e, "golesAFavor"), 0));
-            equipo.setGolesencontra(parseInt(getText(e, "golesEnContra"), 0));
-            equipo.setPartidosjugados(parseInt(getText(e, "partidosJugados"), 0));
-
-            listaEquipos.add(equipo);
+                Equipos equipo = new Equipos(
+                        String.valueOf(idEquipo),
+                        nombreEquipo,
+                        estadioEquipo,
+                        ciudadEquipo,
+                        annioFundacion
+                );
+                equipo.setPartidosjugados(rs.getInt("partidos_jugados"));
+                equipo.setpartidosgandos(rs.getInt("partidos_ganados"));
+                equipo.setpartidosperdidos(rs.getInt("partidos_perdidos"));
+                equipo.setPartidosempatados(rs.getInt("goles_empatados"));
+                equipo.setGolesafavor(rs.getInt("goles_a_favor"));
+                equipo.setGolesencontra(rs.getInt("goles_en_contra"));
+                equipo.setPuntos(rs.getInt("puntos"));
+                listaEquipos.add(equipo);
+            }
+        }catch (SQLException e){
+            throw new RuntimeException("Error al cargar equipos desde SQL" + e.getMessage(), e);
         }
-        return  listaEquipos;
+        return listaEquipos;
     }
 
-    public void guardar(List<Equipos> listaEquipos) throws Exception {
-        if (RutaEquiposXML.getParent() != null) {
-            Files.createDirectories(RutaEquiposXML.getParent());
-        }
-
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document doc = db.newDocument();
-
-        Element root = doc.createElement("equipos");
-        doc.appendChild(root);
-
-        for (Equipos equipo : listaEquipos) {
-            Element eq = doc.createElement("equipo");
-            root.appendChild(eq);
-
-            agregar(doc, eq, "idEquipo", equipo.idEquipoProperty().getValue());
-            agregar(doc, eq, "nombreEquipo", equipo.nombreEquipoProperty().getValue());
-            agregar(doc, eq, "estadioEquipo", equipo.estadioEquipoProperty().getValue());
-            agregar(doc, eq, "ciudadEquipo", equipo.ciudadEquipoProperty().getValue());
-            agregar(doc, eq, "annioFundacion", String.valueOf(equipo.getAnnio()));
-
-            agregar(doc, eq, "puntos", String.valueOf(equipo.puntosProperty().get()));
-            agregar(doc, eq, "partidosGanados", String.valueOf(equipo.ganadosProperty().get()));
-            agregar(doc, eq, "partidosEmpatados", String.valueOf(equipo.empatesProperty().get()));
-            agregar(doc, eq, "partidosPerdidos", String.valueOf(equipo.perdidosProperty().get()));
-            agregar(doc, eq, "golesAFavor", String.valueOf(equipo.golesFavorProperty().get()));
-            agregar(doc, eq, "golesEnContra", String.valueOf(equipo.golesContraProperty().get()));
-            agregar(doc, eq, "partidosJugados", String.valueOf(equipo.jugadosProperty().get()));
-        }
-
-        TransformerFactory tf = TransformerFactory.newInstance();
-        Transformer t = tf.newTransformer();
-        t.setOutputProperty(OutputKeys.INDENT, "yes");
-        //sinceramente esto no se para que es pero el profe lo metio, para algo sera
-        t.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-        t.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_8.name());
-
-        try (OutputStream out = Files.newOutputStream(RutaEquiposXML, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-            t.transform(new DOMSource(doc), new StreamResult(out));
+    public boolean actualizarSQL(Equipos equipo) throws SQLException {
+        try(Connection con = ConnectionFactory.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQL_UPDATE_EQUIPO)
+        ){
+            ps.setString(1, equipo.nombreEquipoProperty().getValue());
+            ps.setString(2, equipo.estadioEquipoProperty().getValue());
+            ps.setString(3, equipo.ciudadEquipoProperty().getValue());
+            ps.setDate(4, Date.valueOf(equipo.getAnnio()));
+            ps.setInt(5, equipo.getIdEquipo());
+            return ps.executeUpdate()>0;
+        }catch (SQLException e){
+            throw new RuntimeException("Error al actualizar equipo: " + e.getMessage(), e);
         }
     }
 
-//Utilidades para XML................................................
-    private String getText(Element e, String tag) {
-        NodeList nl = e.getElementsByTagName(tag);
-        if (nl.getLength() == 0) return "";
-        return nl.item(0).getTextContent();
+    public boolean actualizarEstadisticasSQL(Equipos equipo) throws SQLException {
+        try(Connection con = ConnectionFactory.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQL_UPDATE_ESTADISTICAS)
+        ){
+            ps.setInt(1, equipo.jugadosProperty().get());
+            ps.setInt(2, equipo.ganadosProperty().get());
+            ps.setInt(3, equipo.perdidosProperty().get());
+            ps.setInt(4, equipo.empatesProperty().get());
+            ps.setInt(5, equipo.golesFavorProperty().get());
+            ps.setInt(6, equipo.golesContraProperty().get());
+            ps.setInt(7, equipo.puntosProperty().get());
+            ps.setInt(8, equipo.getIdEquipo());
+
+            return ps.executeUpdate() > 0;
+        }catch (SQLException e){
+            throw new RuntimeException("Error al actualizar estadísticas del equipo: " + e.getMessage(), e);
+        }
     }
 
-    private static void agregar(Document doc, Element patent, String tag, String value){
-        Element ele = doc.createElement(tag);
-        ele.appendChild(doc.createTextNode(value == null ? "" : value));
-        patent.appendChild(ele);
-    }
-
-    // esto es para pasar de string a int con valor por defecto, pero no se usa de momento
-    private static int parseInt(String s, int def) {
-        try {
-            return Integer.parseInt(s.trim());
-        } catch (Exception ex) {
-            return def;
+    public boolean eliminarSQL(int id) {
+        try(Connection con = ConnectionFactory.getConnection();
+            PreparedStatement ps = con.prepareStatement("DELETE FROM Equipo WHERE id = ?")
+        ){
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        }catch (SQLException e){
+            throw new RuntimeException("Error al eliminar equipo: " + e.getMessage(), e);
         }
     }
 }

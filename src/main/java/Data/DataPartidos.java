@@ -23,27 +23,42 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DataPartidos {
+// instnacias SQL usadas
+    private static final String SQL_INSERT_PARTIDO =
+            "INSERT INTO Partido (fecha, id_equipo_local, id_equipo_visitante, " +
+                    "jornada, estadio, estado, goles_local, goles_visitante, id_liga) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    private static final String SQL_SELECT_PARTIDOS =
+            "SELECT id, fecha, id_equipo_local, id_equipo_visitante, " +
+                    "jornada, estadio, estado, goles_local, goles_visitante, id_liga " +
+                    "FROM Partido";
+
+    private static final String SQL_UPDATE_PARTIDO =
+            "UPDATE Partido SET estado = ?, goles_local = ?, goles_visitante = ? " +
+                    "WHERE id = ?";
+
+
     private static DataPartidos instance;
-    private final Path RutapartidosXML;
     private final AtomicInteger idcounter = new AtomicInteger(1);
     private ObservableList<PartidosDTO> partidos;
     private FilteredList<PartidosDTO> Partidosfiltrados;
 
-    public DataPartidos(Path rutapartidosXML) {
-        RutapartidosXML = rutapartidosXML;
+    public DataPartidos() {
         partidos = javafx.collections.FXCollections.observableArrayList();
         Partidosfiltrados = new FilteredList<>(partidos);
     }
 
-    public static DataPartidos getInstance(Path rutapartidosXML) {
+    public static DataPartidos getInstance() {
         if (instance == null) {
-            instance = new DataPartidos(rutapartidosXML);
+            instance = new DataPartidos();
         }
         return instance;
     }
@@ -66,29 +81,9 @@ public class DataPartidos {
 
     }
 
-    public PartidosDTO getPartidoPorNombre(String nombre) {
-        return partidos.stream()
-                .filter(p -> p.nombrepartidoProperty().get().equals(nombre))
-                .findFirst()
-                .orElse(null);
-    }
 //Para los contadores de partidos------------------------------------------------------------
-    //contador de equipos
-    public int totalEquipos(){
-        return DataEquipos.getInstance(null).getEquipos().size();
-    }
+    //contador de equipos y refactorizar
 
-    public boolean contadorJornadasFinalizadas(String jornada){
-        List<PartidosDTO> partidosJornada = partidos.stream()
-                .filter(p -> p.jornadasProperty().get().equals(jornada)).toList();
-
-        if(partidosJornada.isEmpty()){
-            return false;
-        }
-        else {
-            return  partidosJornada.stream().allMatch(p -> p.estadoProperty().get().equals("Finalizado"));
-        }
-    }
 
     public int contarPartidosPorEstado(String estado) {
         return partidos.stream().filter(p -> p.estadoProperty().get().equals(estado)).toList().size();
@@ -120,133 +115,105 @@ public class DataPartidos {
         idcounter.set(maxId + 1);
     }
 
-    public List<PartidosDTO> cargar() throws Exception {
-        if (!Files.exists(RutapartidosXML)) {
-            //si no hay, retornar lista vacia
-            return new ArrayList<>();
+    // SQL metodos
+
+    public void insertarSQL(PartidosDTO partido, int idLiga) throws SQLException {
+        try(Connection con = ConnectionFactory.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQL_INSERT_PARTIDO, Statement.RETURN_GENERATED_KEYS)
+        ){
+            ps.setDate(1, Date.valueOf(partido.getfecha()));
+            ps.setInt(2, partido.getlocal().getIdEquipo());
+            ps.setInt(3, partido.getvisitante().getIdEquipo());
+            ps.setString(4, partido.jornadasProperty().getValue());
+            ps.setString(5, partido.estadioProperty().getValue());
+            ps.setString(6, partido.estadoProperty().getValue());
+            ps.setInt(7, partido.getlocal().golesFavorProperty().get());
+            ps.setInt(8, partido.getvisitante().golesFavorProperty().get());
+            ps.setInt(9, idLiga);
+
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()){
+                if(rs.next()){
+                    partido.idpartidoProperty().setValue(String.valueOf(rs.getInt(1)));
+                }
+            }
+            partido.setliga(idLiga);
+        }catch (SQLException e){
+            throw new RuntimeException("Error al insertar partido: " + e.getMessage(), e);
         }
-        Document doc;
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setIgnoringComments(true);
-        dbf.setNamespaceAware(false);
+    }
 
-        DocumentBuilder db = dbf.newDocumentBuilder();
+    public List<PartidosDTO> cargarSQL(DataEquipos dataEquipos) throws SQLException {
+        List<PartidosDTO> listaPartidos = new ArrayList<>();
 
-        try (InputStream in = Files.newInputStream(RutapartidosXML)) {
-            doc = db.parse(in);
-        }
+        List<Equipos> todosEquipos = dataEquipos.cargarSQL();
 
-        doc.getDocumentElement().normalize();
+        try(Connection con = ConnectionFactory.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQL_SELECT_PARTIDOS);
+            ResultSet rs = ps.executeQuery()
+        ){
+            while(rs.next()){
+                String id = rs.getString("id");
+                LocalDate fecha = rs.getDate("fecha").toLocalDate();
+                int idLocal = rs.getInt("id_equipo_local");
+                int idVisitante = rs.getInt("id_equipo_visitante");
 
-        List<PartidosDTO> ListaPartidos = new ArrayList<>();
-        NodeList nodolist = doc.getElementsByTagName("partido");
-        DataEquipos dataEquipos = DataEquipos.getInstance(Path.of("Data/equipos.xml"));
-        //recorrer nodos que son los elementos equipo
-        for (int i = 0; i < nodolist.getLength(); i++) {
-            Node n = nodolist.item(i);
-            if (n.getNodeType() != Node.ELEMENT_NODE) continue;
+                Equipos local = todosEquipos.stream()
+                        .filter(eq -> eq.getIdEquipo() == idLocal)
+                        .findFirst()
+                        .orElse(null);
 
-            Element e = (Element) n;
+                Equipos visitante = todosEquipos.stream()
+                        .filter(eq -> eq.getIdEquipo() == idVisitante)
+                        .findFirst()
+                        .orElse(null);
 
-            String idPartido = getText(e, "idPartido");
-            String nombrePartido = getText(e, "nombrePartido");
-            String jornada = getText(e, "jornada");
-            String estadio = getText(e, "estadio");
-            LocalDate fecha = LocalDate.parse(getText(e, "fecha"));
-            String liga = getText(e, "liga");
-            String estado = getText(e, "estado");
+                if(local == null || visitante == null) continue;
 
-
-            // se guardan los id para la referencia
-            String idEquipoLocal = getText(e, "idEquipoLocal");
-            String idEquipoVisitante = getText(e, "idEquipoVisitante");
-
-            // se buscan en el data correspondiente
-            Equipos local = buscarEquipoPorId(dataEquipos, idEquipoLocal);
-            Equipos visitante = buscarEquipoPorId(dataEquipos, idEquipoVisitante);
-
-            if (local != null && visitante != null) {
                 PartidosDTO partido = new PartidosDTO(
-                        nombrePartido,
+                        local.getNombre() + " vs " + visitante.getNombre(),
                         local,
                         visitante,
-                        jornada,
-                        idPartido,
+                        rs.getString("jornada"),
+                        id,
                         fecha,
-                        estadio
+                        rs.getString("estadio")
                 );
-
-                partido.setliga(liga);
-                if (estado != null && !estado.isEmpty()) {
-                    partido.estadoProperty().set(estado);
-                }
-
-                ListaPartidos.add(partido);
+                partido.setGolesLocal(rs.getInt("goles_local"));
+                partido.setGolesVisitante(rs.getInt("goles_visitante"));
+                partido.estadoProperty().set(rs.getString("estado"));
+                partido.setliga(rs.getInt("id_liga"));
+                listaPartidos.add(partido);
             }
+        }catch (SQLException e){
+            throw new RuntimeException("Error al cargar partidos: " + e.getMessage(), e);
         }
-        return  ListaPartidos;
+
+        return listaPartidos;
     }
 
-    public void guardar(List<PartidosDTO> listaPartidos) throws Exception {
-        if (RutapartidosXML.getParent() != null) {
-            Files.createDirectories(RutapartidosXML.getParent());
-        }
+    // Método de compatibilidad: antiguas clases podrían invocar cargarSQLFromDB
+    public static List<PartidosDTO> cargarSQLFromDB(DataEquipos dataEquipos) throws SQLException {
+        return DataPartidos.getInstance().cargarSQL(dataEquipos);
+    }
 
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document doc = db.newDocument();
-
-        Element root = doc.createElement("partidos");
-        doc.appendChild(root);
-
-        for ( PartidosDTO partidos : listaPartidos) {
-            Element eq = doc.createElement("partido");
-            root.appendChild(eq);
-
-            agregar(doc, eq, "idPartido", partidos.idpartidoProperty().getValue());
-            agregar(doc, eq, "nombrePartido", partidos.nombrepartidoProperty().getValue());
-            agregar(doc, eq, "jornada", partidos.jornadasProperty().getValue());
-            agregar(doc, eq, "estadio", partidos.estadioProperty().getValue());
-            agregar(doc, eq, "fecha", partidos.getfecha().toString());
-            agregar(doc, eq, "liga", partidos.getliga().getValue());
-            agregar(doc , eq, "estado", partidos.estadoProperty().getValue());
-
-            agregar(doc, eq, "idEquipoLocal", partidos.getlocal().idEquipoProperty().getValue());
-            agregar(doc, eq, "idEquipoVisitante", partidos.getvisitante().idEquipoProperty().getValue());
-
-        }
-
-        TransformerFactory tf = TransformerFactory.newInstance();
-        Transformer t = tf.newTransformer();
-        t.setOutputProperty(OutputKeys.INDENT, "yes");
-        //sinceramente esto no se para que es pero el profe lo metio, para algo sera
-        t.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-        t.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_8.name());
-
-        try (OutputStream out = Files.newOutputStream(RutapartidosXML, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-            t.transform(new DOMSource(doc), new StreamResult(out));
+    public void actualizarSQL(PartidosDTO partido) throws SQLException { // permite actualizar el resultado del controller de registrar resultados
+        try(Connection con = ConnectionFactory.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQL_UPDATE_PARTIDO)
+        ){
+            ps.setString(1, partido.estadoProperty().getValue());
+            ps.setInt(2, partido.golesLocalProperty().get());      // ✓ Goles del partido
+            ps.setInt(3, partido.golesVisitanteProperty().get());
+            ps.setInt(4, Integer.parseInt(partido.idpartidoProperty().getValue()));
+            ps.executeUpdate();
+        }catch (SQLException e){
+            throw new RuntimeException("Error al actualizar partido: " + e.getMessage(), e);
         }
     }
 
-    //Utilidades para XML................................................
-    private String getText(Element e, String tag) {
-        NodeList nl = e.getElementsByTagName(tag);
-        if (nl.getLength() == 0) return "";
-        return nl.item(0).getTextContent();
-    }
 
-    private static void agregar(Document doc, Element patent, String tag, String value){
-        Element ele = doc.createElement(tag);
-        ele.appendChild(doc.createTextNode(value == null ? "" : value));
-        patent.appendChild(ele);
-    }
-
-    // esto es para pasar de string a int con valor por defecto, pero no se usa de momento
-    private static int parseInt(String s, int def) {
-        try {
-            return Integer.parseInt(s.trim());
-        } catch (Exception ex) {
-            return def;
-        }
+    public PartidosDTO cargar() {
+        return null;
     }
 }
